@@ -24,10 +24,17 @@
 | Cookie | `HttpOnly`, `Secure`, `SameSite=Lax` | Limits theft through scripts and cross-site use |
 | CSRF | Spring Security CSRF, with the token sent as a header by the SPA | Required when using cookie authentication |
 | Passwords | BCrypt through Spring's `DelegatingPasswordEncoder` | Needs no extra dependency, and the algorithm can be upgraded later |
-| Password policy | Minimum 12 characters, no composition rules | Length matters most |
-| Brute force | Rate limit by account and IP, with a generic failure message | Reduces password guessing and account discovery |
-| Session | ID rotated at login; expires after 30 minutes idle and 12 hours in total | Reduces fixation and leftover sessions |
-| Stored sessions | Spring Session JDBC, a dependency to approve in Phase 4 | Sessions survive restarts and can be revoked |
+| Password policy | 12 characters minimum and 72 bytes maximum, no composition rules | Length matters most, and BCrypt can only use 72 bytes |
+| Brute force | After failed logins, 429 for 15 minutes: 10 failures per account or 50 per IP. Generic failure message. | Reduces password guessing and account discovery. The IP limit is higher because a classroom or household shares one address. |
+| Session | ID and CSRF token rotated at login; expires after 30 minutes idle and 12 hours in total | Reduces fixation and leftover sessions |
+| Stored sessions | Spring Session JDBC | Sessions survive restarts and can be revoked |
+| Disabled accounts | Checked on every request, which ends any open session | Disabling takes effect immediately |
+| Client address | `X-Forwarded-For` is trusted only from private network addresses (nginx) | Clients can't fake an address to escape the IP limit |
+
+**Known limitations:**
+- Rate limit counters are held in memory, so a restart clears them and they aren't shared between instances. This suits the single-instance prototype.
+- Someone who knows an email can block that account's login for 15 minutes by failing repeatedly.
+- `/auth/register` has no rate limit, so it can be used to discover registered emails or to consume CPU through password hashing. This should be closed before going online in Phase 3.
 
 Deferred, as `03-system-design.md` section 7 allows: multi-factor login, email verification, and self-service password recovery. The demo environment resets passwords through an administrator procedure.
 
@@ -92,6 +99,8 @@ The SRS requires "family-member-specific access permissions" but does not define
 Audit events are written for: login success and failure, logout, account changes, grant changes, profile deletion, document upload, download and deletion, draft approval and rejection, emergency card changes, PDF export, and denied access attempts.
 
 Events record who, what, when, and the outcome, and never the health content involved. The SRS requires this, so a minimal version is in scope for the prototype. Advanced audit reporting stays deferred.
+
+To keep the table from being filled without signing in, three things aren't recorded: signed-out requests answered with 401, CSRF failures from signed-out callers, and login attempts already blocked by the rate limit. A failed login stores the account ID only when the email exists, and never the submitted email.
 
 ## 8. AI safety rules
 

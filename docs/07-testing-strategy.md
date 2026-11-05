@@ -114,13 +114,16 @@ The local database keeps its data between runs, unlike a fresh container. Each l
 
 Docker image builds and the full-stack check run only in CI for now.
 
+### What MockMvc can't show
+MockMvc runs without an embedded server, so Boot doesn't apply the session cookie settings there and forwarded addresses aren't processed. `RealServerIntegrationTest` starts real Tomcat on the same database to check the cookie attributes, forwarded client addresses, and that a session survives a new application context.
+
 ## 6. CI gates
 
 GitHub Actions runs on each push and pull request. All of the following must pass:
 
 1. Backend: `./mvnw verify`, including integration tests.
 2. Frontend: lint, type check, tests, production build.
-3. Docker image builds for backend and frontend, then a full-stack check: the page and health endpoint respond through nginx.
+3. Docker image builds for backend and frontend, then a full-stack check: the page and health endpoint respond through nginx, and an account can register, log in, read `/auth/me`, and log out through nginx.
 
 Coverage is reported, but no percentage target is enforced. The authorization matrix and the areas above are the real requirements, and a percentage can be met without testing them.
 

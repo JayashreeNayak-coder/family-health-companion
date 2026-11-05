@@ -1,6 +1,9 @@
 spring:
   application:
     name: family-health-backend
+  autoconfigure:
+    # Accounts live in user_account. Without this, Boot logs a generated default password at startup.
+    exclude: org.springframework.boot.security.autoconfigure.UserDetailsServiceAutoConfiguration
   datasource:
     url: ${DB_URL}
     username: ${DB_USERNAME}
@@ -10,6 +13,31 @@ spring:
     hibernate:
       ddl-auto: validate
     open-in-view: false
+  session:
+    jdbc:
+      # Flyway owns these tables too.
+      initialize-schema: never
+
+server:
+  # Trust X-Forwarded-* only from private addresses (nginx), so rate limits see the real client IP.
+  forward-headers-strategy: native
+  servlet:
+    session:
+      timeout: 30m
+      cookie:
+        http-only: true
+        same-site: lax
+        # Only local HTTP setups turn this off.
+        secure: ${SESSION_COOKIE_SECURE:true}
+
+app:
+  session:
+    absolute-timeout: 12h
+  login-rate-limit:
+    window: 15m
+    max-failures-per-account: 10
+    # Higher, because a classroom or household shares one address.
+    max-failures-per-address: 50
 
 management:
   endpoints:

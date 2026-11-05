@@ -64,6 +64,22 @@ jobs:
         run: |
           # The SPA fallback answers unknown paths with index.html, never with actuator data.
           ! curl -sS http://127.0.0.1:8080/actuator/env | grep -q 'propertySources'
+      - name: Register, log in, read the account, and log out through nginx
+        run: |
+          set -eu
+          base=http://127.0.0.1:8080/api/v1/auth
+          jar=$(mktemp)
+          email="ci-$(openssl rand -hex 6)@example.test"
+          password="$(openssl rand -hex 16)"
+          csrf() { curl -fsS -b "$jar" -c "$jar" "$base/csrf" | jq -r .token; }
+          post() { curl -fsS -o /dev/null -b "$jar" -c "$jar" -H 'Content-Type: application/json' -H "X-CSRF-TOKEN: $(csrf)" -d "$2" "$base/$1"; }
+
+          test "$(curl -sS -o /dev/null -w '%{http_code}' "$base/me")" = 401
+          post register "{\"email\":\"$email\",\"password\":\"$password\",\"displayName\":\"CI\"}"
+          post login "{\"email\":\"$email\",\"password\":\"$password\"}"
+          curl -fsS -b "$jar" "$base/me" | jq -e --arg email "$email" '.email == $email'
+          post logout '{}'
+          test "$(curl -sS -o /dev/null -w '%{http_code}' -b "$jar" "$base/me")" = 401
       - name: Show container status on failure
         if: failure()
         run: docker compose ps --all

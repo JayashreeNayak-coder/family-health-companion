@@ -2,7 +2,7 @@
 
 A web application that helps individuals and families organize health records. It is a record-management and support tool. It does not diagnose, prescribe, or replace healthcare professionals.
 
-**Status:** early prototype. The repository currently contains only the technical foundation, with no health features yet. See [PROJECT_STATUS.md](PROJECT_STATUS.md).
+**Status:** early prototype. Accounts, sign-in, and the audit log work, but there are no health features yet. See [PROJECT_STATUS.md](PROJECT_STATUS.md).
 
 **Use synthetic data only.** Do not enter real health information.
 
@@ -45,7 +45,9 @@ npm ci
 npm run dev
 ```
 
-Open `http://localhost:5173`. The page should say **Backend connected**.
+Open `http://localhost:5173`. You should see the sign-in page, where you can create an account.
+
+The `dev` profile turns off the `Secure` cookie attribute, because local development uses plain HTTP. Every other environment keeps it on unless `SESSION_COOKIE_SECURE` is set to `false`.
 
 ## Tests
 
@@ -82,7 +84,7 @@ cp .env.example .env    # then set DB_PASSWORD in .env
 docker compose up --build
 ```
 
-Open `http://localhost:8080`. nginx serves the frontend and forwards `/api/` and `/actuator/health` to the backend. Other actuator paths aren't forwarded.
+Open `http://localhost:8080`. This stack is for local HTTP only, so `.env.example` sets `SESSION_COOKIE_SECURE=false`. nginx serves the frontend and forwards `/api/` and `/actuator/health` to the backend. Other actuator paths aren't forwarded.
 
 ## Documentation
 

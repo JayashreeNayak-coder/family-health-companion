@@ -63,15 +63,27 @@ Returning 404 for profiles a user cannot access means the API does not reveal th
 
 Phase 4 uses a server-side session in a cookie, with CSRF protection.
 
-| Method | Path | Purpose |
-|---|---|---|
-| POST | `/auth/register` | Create an account |
-| POST | `/auth/login` | Start a session, rotating the session ID |
-| POST | `/auth/logout` | End the session |
-| GET | `/auth/me` | Current user |
-| GET | `/auth/csrf` | Issue the CSRF token for the SPA |
+| Method | Path | Access | Request | Success |
+|---|---|---|---|---|
+| POST | `/auth/register` | Public | `email`, `password`, `displayName` | 201, account. Does not sign in. |
+| POST | `/auth/login` | Public | `email`, `password` | 200, account. Rotates the session ID and CSRF token. |
+| POST | `/auth/logout` | Signed in | None | 204 |
+| GET | `/auth/me` | Signed in | None | 200, account |
+| GET | `/auth/csrf` | Public | None | 200, `headerName` and `token` |
 
-Login failures return the same response whether or not the email exists.
+An account response is `id`, `email`, and `displayName`.
+
+Every POST, including login and register, must send the token from `/auth/csrf` in the named header, or it returns 403 with code `CSRF_REJECTED`. The token changes at login, so the SPA fetches a new one before each write.
+
+| Status | Code | When |
+|---|---|---|
+| 400 | `VALIDATION_FAILED` | Invalid input, with `errors` listing each field |
+| 401 | `INVALID_CREDENTIALS` | Login failed. Identical for a wrong password, an unknown email, and a disabled account. |
+| 401 | `UNAUTHENTICATED` | Not signed in |
+| 409 | `EMAIL_ALREADY_REGISTERED` | Registration with an email already in use |
+| 429 | `RATE_LIMITED` | Too many failed logins, with a `Retry-After` header |
+
+The 409 does reveal that an email is registered. Hiding it would need email verification, which is deferred (`06-security-and-ai-safety.md` section 2).
 
 ## 4. Family and profiles
 

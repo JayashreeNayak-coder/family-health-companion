@@ -11,20 +11,10 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 
-@SpringBootTest(properties = {
-		"spring.datasource.url=${TEST_DB_URL:}",
-		"spring.datasource.username=${TEST_DB_USERNAME:}",
-		"spring.datasource.password=${TEST_DB_PASSWORD:}"
-})
-@AutoConfigureMockMvc
-@Import(TestDatabaseConfig.class)
-class ApplicationIntegrationTest {
+class ApplicationIntegrationTest extends IntegrationTestBase {
 
 	@Autowired
 	private MockMvc mockMvc;
@@ -45,11 +35,11 @@ class ApplicationIntegrationTest {
 		assertThat(version).startsWith("18");
 	}
 
-	@Test
-	void flywayAppliesBaselineMigration() {
+	@ParameterizedTest
+	@ValueSource(strings = { "1", "2" })
+	void flywayAppliesMigrations(String version) {
 		Integer applied = jdbcTemplate.queryForObject(
-				"SELECT count(*) FROM flyway_schema_history WHERE version = '1' AND success",
-				Integer.class);
+				"SELECT count(*) FROM flyway_schema_history WHERE version = ? AND success", Integer.class, version);
 
 		assertThat(applied).isEqualTo(1);
 	}
@@ -72,7 +62,14 @@ class ApplicationIntegrationTest {
 	@ParameterizedTest
 	@ValueSource(strings = { "/actuator/env", "/actuator/beans", "/actuator/configprops", "/actuator/heapdump" })
 	void otherActuatorEndpointsAreNotExposed(String path) throws Exception {
-		mockMvc.perform(get(path)).andExpect(status().isNotFound());
+		mockMvc.perform(get(path)).andExpect(status().isUnauthorized());
+
+		ApiClient signedIn = new ApiClient(mockMvc);
+		String email = ApiClient.uniqueEmail();
+		signedIn.register(email, ApiClient.PASSWORD);
+		signedIn.login(email, ApiClient.PASSWORD);
+
+		assertThat(signedIn.get(path).getStatus()).isEqualTo(404);
 	}
 
 }

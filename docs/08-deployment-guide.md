@@ -122,6 +122,7 @@ The recommended starting point is one small VPS running Docker Compose, with a l
 | `SPRING_PROFILES_ACTIVE` | `dev` or `demo` | No |
 | `DB_URL`, `DB_USERNAME` | Database connection | No |
 | `DB_PASSWORD` | Database password | Yes |
+| `SESSION_COOKIE_SECURE` | Default `true`. Set to `false` only for local plain HTTP. Must stay `true` in demo. | No |
 | `STORAGE_ENDPOINT`, `STORAGE_BUCKET` | Object storage (Phase 11) | No |
 | `STORAGE_ACCESS_KEY`, `STORAGE_SECRET_KEY` | Object storage (Phase 11) | Yes |
 | `AI_PROVIDER_API_KEY` | AI provider (Phase 12) | Yes |

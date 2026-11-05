@@ -1,6 +1,11 @@
 # Local development against the Windows PostgreSQL service. DB_PASSWORD has no default.
 server:
   port: 8081
+  servlet:
+    session:
+      cookie:
+        # Local development runs over plain HTTP.
+        secure: false
 
 spring:
   datasource:

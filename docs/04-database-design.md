@@ -199,7 +199,8 @@ Notes:
 
 - **`emergency_card_item` stores approved text, not references.** The card can only show what the user explicitly approved. An edit to a record cannot silently change or expand a public card. The UI flags when a source record has changed.
 - **Only a hash of the emergency token is stored.** A database leak does not reveal working links.
-- **`audit_event` is append-only and holds no health details.** Its actor and target references are deliberately not foreign keys, so the history outlives deleted records.
+- **`audit_event` is append-only and holds no health details.** Its actor and target references are deliberately not foreign keys, so the history outlives deleted records. `action` has no `CHECK` constraint, unlike other enumerations, because each later phase adds actions. The code's `AuditAction` lists them.
+- **`spring_session` and `spring_session_attributes` belong to Spring Session JDBC** and follow its schema rather than the conventions above. Flyway creates them. The principal stored in a session is the account ID only.
 
 ## 8. Indexes and deletion
 

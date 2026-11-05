@@ -17,7 +17,7 @@ This repository is the project's memory, so a new conversation doesn't need the 
 - Keep plans brief, but still stop for approval between phases.
 
 ## Current state
-- Only the Phase 1 technical foundation exists, with no domain code. See `PROJECT_STATUS.md` for the phase and what is blocked.
+- Identity, sessions, and the audit log exist (Phase 4), with no health features yet. See `PROJECT_STATUS.md` for the phase and what is blocked.
 - `docs/01` to `docs/08` are the approved baseline.
 
 ## Git
@@ -34,11 +34,16 @@ This repository is the project's memory, so a new conversation doesn't need the 
 - Maven isn't installed; use the Wrapper. JDK 25 is `JAVA_HOME` on Windows.
 - Node is 22.14. Check `engines` before adding or upgrading frontend packages. Some current releases, such as `jsdom` 30, need a newer Node.
 - There's no local Docker (`DECISIONS.md`, D-011). Docker and Testcontainers run only in CI, so Dockerfile and Compose changes can only be verified by a CI run.
-- To run integration tests without the owner's database password, start a throwaway PostgreSQL with the installed binaries (`initdb` and `pg_ctl`) on a spare port and a scratch data folder, then set `TEST_DB_URL`, `TEST_DB_USERNAME`, and `TEST_DB_PASSWORD`.
+- To run integration tests without the owner's database password, start a throwaway PostgreSQL with the installed binaries (`initdb` and `pg_ctl`) on a spare port and a scratch data folder, then set `TEST_DB_URL`, `TEST_DB_USERNAME`, and `TEST_DB_PASSWORD`. Don't pipe `pg_ctl start` in PowerShell: the server inherits the pipe and the command never returns.
+- `gh` isn't installed. The GitHub API is reachable with `curl`, using the token from `git credential fill`.
 
 ## Backend tests
 - Tests named `*IntegrationTest` run under Failsafe (`verify`) and need a database. Surefire (`test`) excludes them.
 - Spring Boot 4 has moved test annotations to new packages, for example `org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc`.
+- Integration tests extend `IntegrationTestBase` and use `ApiClient`, which fetches a real CSRF token and keeps the session cookie. Don't bypass security in tests.
+- The local test database keeps its data, so use `ApiClient.uniqueEmail()`. Each `ApiClient` also gets its own address, so failed logins in one test can't rate limit another.
+- Session cookie attributes and forwarded addresses only work on an embedded server. Test them in `RealServerIntegrationTest`, not with MockMvc.
+- Don't add a `Filter` as a Spring bean inside the security chain, or Boot registers it a second time as a servlet filter. `SecurityConfig` creates `SessionPolicyFilter` with `new`.
 
 ## Working agreement
 - Work in approved phases, and stop for approval between them.
