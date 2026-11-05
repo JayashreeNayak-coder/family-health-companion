@@ -50,6 +50,11 @@ function displayValue(value: unknown, field: FieldConfig): string | null {
   return field.type === 'time' ? String(value).slice(0, 5) : String(value)
 }
 
+function titleOf(resource: ResourceConfig, item: RecordItem): string {
+  const title = item[resource.titleField]
+  return title ? String(title) : (resource.fallbackTitle ?? resource.singular)
+}
+
 function optionLabel(field: FieldConfig, value: string): string {
   return field.options?.find((option) => option.value === value)?.label ?? value
 }
@@ -111,7 +116,7 @@ export function RecordSection({ profileId, canEdit, resource, renderItemExtras }
           {items.map((item) => (
             <li key={item.id} className="py-3">
               <div className="flex flex-wrap items-center gap-2">
-                <strong>{String(item[resource.titleField])}</strong>
+                <strong>{titleOf(resource, item)}</strong>
                 {resource.hasProvenance && (
                   <SourceLabel
                     sourceType={item.sourceType}
@@ -146,7 +151,7 @@ export function RecordSection({ profileId, canEdit, resource, renderItemExtras }
                   <button
                     type="button"
                     className={secondaryButtonClass}
-                    aria-label={`Edit ${String(item[resource.titleField])}`}
+                    aria-label={`Edit ${titleOf(resource, item)}`}
                     onClick={() => setEditing(item)}
                   >
                     Edit
@@ -154,7 +159,7 @@ export function RecordSection({ profileId, canEdit, resource, renderItemExtras }
                   <button
                     type="button"
                     className={dangerButtonClass}
-                    aria-label={`Delete ${String(item[resource.titleField])}`}
+                    aria-label={`Delete ${titleOf(resource, item)}`}
                     onClick={() => void handleDelete(item)}
                   >
                     Delete

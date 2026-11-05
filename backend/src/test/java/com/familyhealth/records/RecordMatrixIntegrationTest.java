@@ -43,7 +43,11 @@ class RecordMatrixIntegrationTest extends IntegrationTestBase {
 				new Resource("dietary-restrictions", Map.of("kind", "PREFERENCE", "description", "Synthetic"),
 						"description", Map.of("kind", "PREFERENCE")),
 				new Resource("emergency-contacts", Map.of("name", "Synthetic Contact", "phone", "+91 555 0100"), "name",
-						Map.of("name", "Synthetic Contact", "phone", "not a phone")));
+						Map.of("name", "Synthetic Contact", "phone", "not a phone")),
+				new Resource("visits", Map.of("occurredOn", "2026-01-15", "occurredTime", "08:30", "reason", "Checkup"),
+						"reason", Map.of("occurredTime", "08:30")),
+				new Resource("symptoms", Map.of("description", "Synthetic cough", "occurredOn", "2026-01-15"),
+						"description", Map.of("description", " ")));
 	}
 
 	@Autowired

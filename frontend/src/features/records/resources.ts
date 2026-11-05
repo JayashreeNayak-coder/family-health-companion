@@ -14,6 +14,8 @@ export type ResourceConfig = {
   singular: string
   /** The field shown as the item's heading. */
   titleField: string
+  /** The heading when the title field is optional and empty. */
+  fallbackTitle?: string
   fields: FieldConfig[]
   /** Health records show where they came from. Emergency contacts aren't health records. */
   hasProvenance: boolean
@@ -74,6 +76,38 @@ export const DIETARY: ResourceConfig = {
         { value: 'PREFERENCE', label: 'Preference' },
       ],
     },
+  ],
+}
+
+export const VISITS: ResourceConfig = {
+  path: 'visits',
+  title: 'Doctor visits',
+  singular: 'visit',
+  titleField: 'reason',
+  fallbackTitle: 'Doctor visit',
+  hasProvenance: true,
+  fields: [
+    { name: 'reason', label: 'Reason', maxLength: 500 },
+    { name: 'occurredOn', label: 'Date', type: 'date' },
+    { name: 'occurredTime', label: 'Time', type: 'time' },
+    { name: 'doctorName', label: 'Doctor', maxLength: 200 },
+    { name: 'facility', label: 'Facility', maxLength: 200 },
+    { name: 'notes', label: 'Notes', type: 'textarea', maxLength: 4000 },
+  ],
+}
+
+export const SYMPTOMS: ResourceConfig = {
+  path: 'symptoms',
+  title: 'Symptoms',
+  singular: 'symptom',
+  titleField: 'description',
+  hasProvenance: true,
+  fields: [
+    { name: 'description', label: 'Symptom', required: true, maxLength: 500 },
+    { name: 'severityAsReported', label: 'Severity, as reported', maxLength: 100 },
+    { name: 'occurredOn', label: 'Date', type: 'date' },
+    { name: 'occurredTime', label: 'Time', type: 'time' },
+    { name: 'notes', label: 'Notes', type: 'textarea', maxLength: 4000 },
   ],
 }
 

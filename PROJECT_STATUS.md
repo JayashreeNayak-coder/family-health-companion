@@ -36,7 +36,7 @@
 | 5 | Family, profiles, and authorization | Done |
 | 3 | Deploy online with HTTPS (runs after Phase 5; needs budget, domain, and hosting account) | Not started |
 | 6 | Conditions, allergies, restrictions, emergency contacts, and provenance | Done |
-| 7 | Visits, symptoms, and first timeline | Not started |
+| 7 | Visits, symptoms, and first timeline | Done |
 | 8 | Medication, adherence, and reminders | Not started |
 | 9 | Lab results and trends | Not started |
 | 10 | Food log | Not started |

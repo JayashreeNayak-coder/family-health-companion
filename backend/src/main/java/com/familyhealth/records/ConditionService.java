@@ -3,14 +3,31 @@ package com.familyhealth.records;
 import com.familyhealth.profile.ProfileAccess;
 import com.familyhealth.records.ConditionDtos.Request;
 import com.familyhealth.records.ConditionDtos.Response;
+import com.familyhealth.records.timeline.TimelineEntry;
+import com.familyhealth.records.timeline.TimelineSource;
+import com.familyhealth.records.timeline.TimelineType;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 
 @Service
-class ConditionService extends RecordService<Condition, Request, Response> {
+class ConditionService extends RecordService<Condition, Request, Response> implements TimelineSource {
+
+	private final ConditionRepository repository;
 
 	ConditionService(ConditionRepository repository, ProfileAccess access) {
 		super(repository, access);
+		this.repository = repository;
+	}
+
+	@Override
+	public List<TimelineEntry> timelineEntries(UUID profileId) {
+		return repository.findByProfileId(profileId)
+			.stream()
+			.map(condition -> new TimelineEntry(TimelineType.CONDITION, condition.id(), condition.onsetOn(), null,
+					condition.name(), null, condition.sourceType(), condition.sourceDocumentId(),
+					condition.sourceDocumentDeletedAt()))
+			.toList();
 	}
 
 	@Override

@@ -3,7 +3,16 @@ import { errorMessage } from '../../api/client'
 import { getProfile, type Profile } from '../../api/profiles'
 import { ErrorNote, secondaryButtonClass } from '../../components/ui'
 import { RecordSection } from '../records/RecordSection'
-import { ALLERGIES, CONDITIONS, CONTACTS, DIETARY } from '../records/resources'
+import {
+  ALLERGIES,
+  CONDITIONS,
+  CONTACTS,
+  DIETARY,
+  SYMPTOMS,
+  VISITS,
+  type ResourceConfig,
+} from '../records/resources'
+import { TimelinePanel } from '../records/TimelinePanel'
 import { AccessPanel } from './AccessPanel'
 import { DetailsPanel } from './DetailsPanel'
 
@@ -12,9 +21,14 @@ type Tab = { id: string; label: string }
 const BASE_TABS: Tab[] = [
   { id: 'details', label: 'Details' },
   { id: 'history', label: 'Health history' },
+  { id: 'visits', label: 'Visits and symptoms' },
+  { id: 'timeline', label: 'Timeline' },
 ]
 
-const HISTORY_RESOURCES = [CONDITIONS, ALLERGIES, DIETARY, CONTACTS]
+const SECTIONS: Record<string, ResourceConfig[]> = {
+  history: [CONDITIONS, ALLERGIES, DIETARY, CONTACTS],
+  visits: [VISITS, SYMPTOMS],
+}
 
 type Props = {
   profileId: string
@@ -68,15 +82,15 @@ export function ProfilePage({ profileId, onBack }: Props) {
           {tab === 'details' && (
             <DetailsPanel profile={profile} onSaved={setProfile} onDeleted={onBack} />
           )}
-          {tab === 'history' &&
-            HISTORY_RESOURCES.map((resource) => (
-              <RecordSection
-                key={resource.path}
-                profileId={profile.id}
-                canEdit={profile.accessLevel !== 'VIEW'}
-                resource={resource}
-              />
-            ))}
+          {SECTIONS[tab]?.map((resource) => (
+            <RecordSection
+              key={resource.path}
+              profileId={profile.id}
+              canEdit={profile.accessLevel !== 'VIEW'}
+              resource={resource}
+            />
+          ))}
+          {tab === 'timeline' && <TimelinePanel profileId={profile.id} />}
           {tab === 'access' && <AccessPanel profile={profile} />}
         </>
       )}
