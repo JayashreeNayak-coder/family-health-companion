@@ -8,7 +8,6 @@ import com.familyhealth.common.RateLimitedException;
 import com.familyhealth.identity.AuthDtos.AccountResponse;
 import com.familyhealth.identity.AuthDtos.LoginRequest;
 import com.familyhealth.identity.AuthDtos.RegisterRequest;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalLong;
@@ -109,7 +108,7 @@ class AuthService {
 	}
 
 	private static String normalizeEmail(String email) {
-		return email.trim().toLowerCase(Locale.ROOT);
+		return AccountDirectory.normalizeEmail(email);
 	}
 
 	private static ApiException emailTaken() {

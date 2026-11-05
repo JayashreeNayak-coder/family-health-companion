@@ -90,17 +90,31 @@ The 409 does reveal that an email is registered. Hiding it would need email veri
 | Method | Path | Minimum access |
 |---|---|---|
 | POST | `/families` | Signed in |
+| GET | `/families` | Returns only the caller's families |
 | GET | `/families/{familyId}` | Family member |
-| POST | `/families/{familyId}/invitations` | Family manager |
+| POST | `/families/{familyId}/invitations` | Family manager. Offering a profile also needs `MANAGE` on it. |
+| GET | `/families/invitations/{token}` | Signed in, invited user. Shows the family, and the profile on offer. |
 | POST | `/families/invitations/{token}/accept` | Signed in, invited user |
 | GET | `/profiles` | Returns only profiles the user has a grant for |
-| POST | `/families/{familyId}/profiles` | Family manager |
+| POST | `/families/{familyId}/profiles` | Family manager for `kind` `DEPENDENT` or `ADULT`. Any member for `SELF`. |
 | GET | `/profiles/{profileId}` | `VIEW` |
 | PUT | `/profiles/{profileId}` | `EDIT` |
 | DELETE | `/profiles/{profileId}` | `MANAGE` |
 | GET | `/profiles/{profileId}/grants` | `MANAGE` |
 | PUT | `/profiles/{profileId}/grants/{accountId}` | `MANAGE` |
 | DELETE | `/profiles/{profileId}/grants/{accountId}` | `MANAGE` |
+
+Invitation rules:
+
+- The token is returned once, when the invitation is created. There is no email delivery in the prototype, so the manager passes the code on.
+- An unknown, expired, used, or someone else's invitation returns the same 404 (`INVITATION_NOT_FOUND`).
+- When the invitation offers a profile, `accept` needs `keepAccess` (`NONE`, `VIEW`, or `EDIT`), the adult's choice of what others keep. Without it the response is 400 (`KEEP_ACCESS_REQUIRED`).
+
+Grant rules:
+
+- Grants can only go to family members, otherwise 404 (`MEMBER_NOT_FOUND`).
+- Removing or lowering the last `MANAGE` returns 409 (`LAST_MANAGER`).
+- Removing or lowering the linked adult's own `MANAGE` returns 409 (`LINKED_ACCOUNT_GRANT`).
 
 ## 5. Profile-owned records
 

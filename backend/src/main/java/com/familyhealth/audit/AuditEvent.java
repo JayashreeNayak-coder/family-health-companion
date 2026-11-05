@@ -52,8 +52,9 @@ class AuditEvent {
 	}
 
 	AuditEvent(Instant occurredAt, UUID actorAccountId, AuditAction action, String targetType, UUID targetId,
-			AuditOutcome outcome, Map<String, String> metadata) {
+			UUID profileId, AuditOutcome outcome, Map<String, String> metadata) {
 		this.id = UUID.randomUUID();
+		this.profileId = profileId;
 		this.occurredAt = occurredAt;
 		this.actorAccountId = actorAccountId;
 		this.action = action;

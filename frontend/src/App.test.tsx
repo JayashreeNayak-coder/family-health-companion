@@ -1,45 +1,11 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { App } from './App'
+import { problem, stubApi } from './test/stubApi'
 
 const account = { id: 'a1', email: 'sam@example.test', displayName: 'Sam Synthetic' }
 
-type Reply = { status: number; body?: unknown } | Error
-
-function problem(status: number, code: string, title: string, errors?: unknown[]): Reply {
-  return { status, body: { type: 'about:blank', status, code, title, errors } }
-}
-
 const signedOut = problem(401, 'UNAUTHENTICATED', 'Sign in to continue')
-
-/**
- * Stubs fetch by "METHOD path". Each route answers with its replies in order, and repeats the
- * last one. The CSRF route is always answered, like the real API.
- */
-function stubApi(routes: Record<string, Reply | Reply[]>) {
-  const remaining = new Map(
-    Object.entries(routes).map(([route, replies]) => [route, [replies].flat()]),
-  )
-  const stub = vi.fn(async (url: string, init?: RequestInit) => {
-    const route = `${init?.method ?? 'GET'} ${url.replace('/api/v1', '')}`
-    if (route === 'GET /auth/csrf') {
-      return new Response(JSON.stringify({ headerName: 'X-CSRF-TOKEN', token: 'csrf-1' }))
-    }
-    const replies = remaining.get(route)
-    if (!replies) {
-      throw new Error(`Unexpected request: ${route}`)
-    }
-    const reply = replies.length > 1 ? replies.shift()! : replies[0]
-    if (reply instanceof Error) {
-      throw reply
-    }
-    return new Response(reply.body === undefined ? null : JSON.stringify(reply.body), {
-      status: reply.status,
-    })
-  })
-  vi.stubGlobal('fetch', stub)
-  return stub
-}
 
 function requestBody(stub: ReturnType<typeof stubApi>, path: string) {
   const call = stub.mock.calls.find(([url]) => url === `/api/v1${path}`)

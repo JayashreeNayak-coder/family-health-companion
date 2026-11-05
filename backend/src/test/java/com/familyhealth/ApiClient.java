@@ -61,8 +61,26 @@ public final class ApiClient {
 		return JsonPath.read(get("/api/v1/auth/csrf").getContentAsString(), "$.token");
 	}
 
-	public MockHttpServletResponse post(String path, Map<String, String> body) throws Exception {
+	public MockHttpServletResponse post(String path, Map<String, ?> body) throws Exception {
 		return postRaw(path, JSON.writeValueAsString(body));
+	}
+
+	public MockHttpServletResponse put(String path, Map<String, ?> body) throws Exception {
+		return send(MockMvcRequestBuilders.put(path)
+			.contentType(MediaType.APPLICATION_JSON)
+			.content(JSON.writeValueAsString(body))
+			.header("X-CSRF-TOKEN", csrfToken()));
+	}
+
+	public MockHttpServletResponse delete(String path) throws Exception {
+		return send(MockMvcRequestBuilders.delete(path).header("X-CSRF-TOKEN", csrfToken()));
+	}
+
+	/** Registers and signs in a new account, and returns its ID. */
+	public String signUp(String email, String displayName) throws Exception {
+		String id = JsonPath.read(register(email, PASSWORD, displayName).getContentAsString(), "$.id");
+		login(email, PASSWORD);
+		return id;
 	}
 
 	public MockHttpServletResponse postRaw(String path, String body) throws Exception {

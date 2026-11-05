@@ -33,7 +33,7 @@
 | 1 | Repository foundation and minimal end-to-end app | Done |
 | 2 | Design baseline: finalize `docs/04` to `docs/08`, fix inconsistencies | Done |
 | 4 | Identity, sessions, and audit log | Done |
-| 5 | Family, profiles, and authorization | Not started |
+| 5 | Family, profiles, and authorization | Done |
 | 3 | Deploy online with HTTPS (runs after Phase 5; needs budget, domain, and hosting account) | Not started |
 | 6 | Conditions, allergies, restrictions, emergency contacts, and provenance | Not started |
 | 7 | Visits, symptoms, and first timeline | Not started |

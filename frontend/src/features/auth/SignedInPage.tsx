@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { logout, type Account } from '../../api/auth'
 import { ApiError } from '../../api/client'
+import { Dashboard } from '../home/Dashboard'
 
 type Props = {
   account: Account
@@ -29,9 +30,10 @@ export function SignedInPage({ account, onSignedOut }: Props) {
   }
 
   return (
-    <section className="mx-auto w-full max-w-sm rounded-lg bg-white p-6 shadow">
-      <h2 className="text-xl font-semibold">Welcome, {account.displayName}</h2>
-      <p className="mt-1 text-sm text-slate-600">Signed in as {account.email}</p>
+    <div className="mx-auto w-full max-w-4xl space-y-4">
+      <section className="rounded-lg bg-white p-5 shadow">
+        <h2 className="text-xl font-semibold">Welcome, {account.displayName}</h2>
+        <p className="mt-1 text-sm text-slate-600">Signed in as {account.email}</p>
 
       {error && (
         <p role="alert" className="mt-4 rounded bg-red-50 p-2 text-sm text-red-800">
@@ -47,6 +49,8 @@ export function SignedInPage({ account, onSignedOut }: Props) {
       >
         {signingOut ? 'Signing out…' : 'Sign out'}
       </button>
-    </section>
+      </section>
+      <Dashboard />
+    </div>
   )
 }

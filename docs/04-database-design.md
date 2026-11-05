@@ -111,6 +111,19 @@ Unique: (`family_id`, `linked_account_id`). Sex, blood group, and government or 
 
 Grants are the only source of access to a profile. See `06-security-and-ai-safety.md` section 3.
 
+### `family_invitation`
+| Column | Type | Notes |
+|---|---|---|
+| `id` | uuid | PK |
+| `family_id` | uuid | FK, NOT NULL |
+| `profile_id` | uuid | FK, NULL. When set, accepting also links this profile to the invited adult. |
+| `invited_email` | text | NOT NULL, stored lowercase. Only this account can accept. |
+| `role` | text | `MANAGER`, `MEMBER` |
+| `token_hash` | text | NOT NULL, UNIQUE. SHA-256 of the token, which is never stored. |
+| `invited_by` | uuid | FK `user_account` |
+| `expires_at` | timestamptz | NOT NULL, 7 days after creation |
+| `accepted_at`, `accepted_by` | | NULL until accepted. Single use. |
+
 ## 4. Health records
 
 All tables in this section have `profile_id` and the provenance columns from section 1.2.
@@ -228,7 +241,7 @@ Migrations arrive with the phase that needs them, rather than as one schema up f
 |---|---|
 | 1 | `V1` baseline, no domain tables |
 | 4 | `user_account`, session tables, `audit_event` |
-| 5 | `family`, `family_membership`, `health_profile`, `profile_access_grant` |
+| 5 | `family`, `family_membership`, `health_profile`, `profile_access_grant`, `family_invitation` |
 | 6 | `condition`, `allergy`, `dietary_restriction`, `emergency_contact` |
 | 7 | `doctor_visit`, `symptom_entry` |
 | 8 | `medication`, `medication_schedule`, `adherence_event` |

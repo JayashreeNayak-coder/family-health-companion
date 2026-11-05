@@ -6,11 +6,13 @@ import java.util.Map;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.csrf.CsrfException;
@@ -41,6 +43,16 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 	@ExceptionHandler(ApiException.class)
 	ResponseEntity<ProblemDetail> handleApiException(ApiException ex) {
 		return ResponseEntity.status(ex.status()).body(problem(ex.status(), ex.code(), ex.getMessage()));
+	}
+
+	/** Two writes raced, and the database or the version column stopped the second. */
+	@ExceptionHandler({ ObjectOptimisticLockingFailureException.class, DataIntegrityViolationException.class })
+	ResponseEntity<ProblemDetail> handleConflict(Exception ex) {
+		// The class name only: these messages can quote the submitted values.
+		log.warn("Write conflict: {}", ex.getClass().getSimpleName());
+		HttpStatus status = HttpStatus.CONFLICT;
+		return ResponseEntity.status(status)
+			.body(problem(status, "CONFLICT", "This could not be saved because of a conflicting change"));
 	}
 
 	@ExceptionHandler(AuthenticationException.class)

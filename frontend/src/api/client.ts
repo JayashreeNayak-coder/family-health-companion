@@ -52,15 +52,34 @@ export async function apiGet<T>(path: string): Promise<T> {
  * Fetches a CSRF token before each write. The token changes at login and logout, and when a
  * session expires, so a fresh one avoids a stale token and needs no retry logic.
  */
-export async function apiPost<T>(path: string, body?: unknown): Promise<T> {
+async function write<T>(method: string, path: string, body?: unknown): Promise<T> {
   const csrf = await apiGet<{ headerName: string; token: string }>('/auth/csrf')
   const response = await send(path, {
-    method: 'POST',
+    method,
     headers: { 'Content-Type': 'application/json', [csrf.headerName]: csrf.token },
-    body: JSON.stringify(body ?? {}),
+    body: method === 'DELETE' ? undefined : JSON.stringify(body ?? {}),
   })
   if (response.status === 204) {
     return undefined as T
   }
   return response.json() as Promise<T>
+}
+
+export function apiPost<T>(path: string, body?: unknown): Promise<T> {
+  return write<T>('POST', path, body)
+}
+
+export function apiPut<T>(path: string, body: unknown): Promise<T> {
+  return write<T>('PUT', path, body)
+}
+
+export function apiDelete(path: string): Promise<void> {
+  return write<void>('DELETE', path)
+}
+
+export type Page<T> = { items: T[]; page: number; size: number; totalItems: number }
+
+/** The message to show a user for any failed request. */
+export function errorMessage(error: unknown): string {
+  return error instanceof ApiError ? error.message : 'Something went wrong'
 }
