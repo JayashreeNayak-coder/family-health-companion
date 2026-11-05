@@ -1,0 +1,2 @@
+-- Baseline migration. Proves the Flyway pipeline; domain tables arrive with their modules.
+-- See docs/04-database-design.md section 9.
