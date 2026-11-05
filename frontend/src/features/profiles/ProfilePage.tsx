@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { errorMessage } from '../../api/client'
 import { getProfile, type Profile } from '../../api/profiles'
 import { ErrorNote, secondaryButtonClass } from '../../components/ui'
+import { MedicationsPanel } from '../medication/MedicationsPanel'
 import { RecordSection } from '../records/RecordSection'
 import {
   ALLERGIES,
@@ -22,6 +23,7 @@ const BASE_TABS: Tab[] = [
   { id: 'details', label: 'Details' },
   { id: 'history', label: 'Health history' },
   { id: 'visits', label: 'Visits and symptoms' },
+  { id: 'medications', label: 'Medications' },
   { id: 'timeline', label: 'Timeline' },
 ]
 
@@ -90,6 +92,9 @@ export function ProfilePage({ profileId, onBack }: Props) {
               resource={resource}
             />
           ))}
+          {tab === 'medications' && (
+            <MedicationsPanel profileId={profile.id} canEdit={profile.accessLevel !== 'VIEW'} />
+          )}
           {tab === 'timeline' && <TimelinePanel profileId={profile.id} />}
           {tab === 'access' && <AccessPanel profile={profile} />}
         </>

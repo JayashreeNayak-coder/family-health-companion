@@ -14,10 +14,11 @@ This repository is the project's memory, so a new conversation doesn't need the 
 - Read only the documents and sections the current phase needs, not all of `docs/`. Search before reading whole files.
 - Don't spawn subagents unless asked. Keep replies short.
 - Don't repeat earlier plans or paste long logs. Filter command output to what matters.
-- Keep plans brief, but still stop for approval between phases.
+- Keep plans brief. Routine phases can run together (`DECISIONS.md`, D-018).
 
 ## Current state
-- Identity, sessions, and the audit log exist (Phase 4), with no health features yet. See `PROJECT_STATUS.md` for the phase and what is blocked.
+- Phases 4 to 8 are built: identity, families and profiles, manual health records, the timeline, and medications. See `PROJECT_STATUS.md` for the phase and what is blocked.
+- A new profile-owned record extends `HealthRecord` (or `ProfileRecord` if it isn't a health record), with a service extending `RecordService` and a controller extending `RecordController`. Those two carry the access check and the endpoints. Add a row to `RecordMatrixIntegrationTest`, and implement `TimelineSource` if it belongs on the timeline.
 - `docs/01` to `docs/08` are the approved baseline.
 
 ## Git
@@ -45,7 +46,12 @@ This repository is the project's memory, so a new conversation doesn't need the 
 - Session cookie attributes and forwarded addresses only work on an embedded server. Test them in `RealServerIntegrationTest`, not with MockMvc.
 - Don't add a `Filter` as a Spring bean inside the security chain, or Boot registers it a second time as a servlet filter. `SecurityConfig` creates `SessionPolicyFilter` with `new`.
 
+## Backend pitfalls
+- Spring Data ignores repositories nested inside another class, so each needs its own file.
+- Interface projections fail on package-private entities, because the JDK proxy can't reach them. Return `Object[]` or a public type.
+- Local Git Bash can fail to parse very long heredoc scripts. Use the Write tool for many files.
+
 ## Working agreement
-- Work in approved phases, and stop for approval between them.
+- Work in phases. Run routine phases together, and stop only for a decision that needs the owner (`DECISIONS.md`, D-018).
 - Roadmap order is in `PROJECT_STATUS.md`. It replaces `docs/03-system-design.md` section 9 (see `DECISIONS.md`, D-009).
 - Don't report a test as passing unless it was actually run.

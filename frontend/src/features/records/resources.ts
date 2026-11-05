@@ -111,6 +111,37 @@ export const SYMPTOMS: ResourceConfig = {
   ],
 }
 
+export const MEDICATIONS: ResourceConfig = {
+  path: 'medications',
+  title: 'Medications',
+  singular: 'medication',
+  titleField: 'name',
+  hasProvenance: true,
+  fields: [
+    { name: 'name', label: 'Medication', required: true, maxLength: 200 },
+    { name: 'dosageAsRecorded', label: 'Dosage, as recorded', maxLength: 200 },
+    {
+      name: 'instructionsAsRecorded',
+      label: 'Instructions, as recorded',
+      type: 'textarea',
+      maxLength: 1000,
+    },
+    { name: 'prescribedBy', label: 'Prescribed by', maxLength: 200 },
+    { name: 'startOn', label: 'Start date', type: 'date' },
+    { name: 'endOn', label: 'End date', type: 'date' },
+    {
+      name: 'status',
+      label: 'Status',
+      type: 'select',
+      options: [
+        { value: 'ACTIVE', label: 'Active' },
+        { value: 'STOPPED', label: 'Stopped' },
+        { value: 'UNKNOWN', label: 'Unknown' },
+      ],
+    },
+  ],
+}
+
 export const CONTACTS: ResourceConfig = {
   path: 'emergency-contacts',
   title: 'Emergency contacts',

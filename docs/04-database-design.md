@@ -153,7 +153,7 @@ Dosage is free text so the system preserves what was recorded and cannot be read
 ### `adherence_event` (owned through `medication`)
 `medication_id` FK, `schedule_id` nullable FK, `scheduled_for timestamptz`, `status` (`TAKEN`, `SKIPPED`), `recorded_at` NOT NULL, `recorded_by` FK.
 
-Unique: (`schedule_id`, `scheduled_for`), so one dose cannot be logged twice.
+Unique: (`schedule_id`, `scheduled_for`), so one dose cannot be logged twice. Removing a schedule sets `schedule_id` to NULL, which keeps the history it produced.
 
 ### `lab_result`
 | Column | Type | Notes |

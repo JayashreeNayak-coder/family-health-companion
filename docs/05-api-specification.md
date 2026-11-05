@@ -149,12 +149,17 @@ Record responses include `sourceType` and `sourceDocumentId`, so the UI can alwa
 | Method | Path | Purpose | Access |
 |---|---|---|---|
 | GET | `/profiles/{id}/timeline?from=&to=&types=` | Chronological records, with a "date unknown" group | `VIEW` |
-| PUT | `/profiles/{id}/medications/{medId}/schedules` | Set schedule | `EDIT` |
-| POST | `/profiles/{id}/medications/{medId}/adherence` | Record taken or skipped | `EDIT` |
-| GET | `/profiles/{id}/medications/due?date=` | Doses due, the in-app reminder list | `VIEW` |
+| GET | `/profiles/{id}/medications/{medId}/schedules` | Read schedules | `VIEW` |
+| PUT | `/profiles/{id}/medications/{medId}/schedules` | Replace schedules. One that keeps the same doses keeps its recorded history. | `EDIT` |
+| POST | `/profiles/{id}/medications/{medId}/adherence` | Record taken or skipped. 400 `NOT_A_SCHEDULED_DOSE`, 400 `DOSE_IN_FUTURE`, 409 `ALREADY_RECORDED`. | `EDIT` |
+| GET | `/profiles/{id}/medications/due?date=` | Doses of active medications due on a date, the in-app reminder list | `VIEW` |
 | GET | `/profiles/{id}/lab-results/trends?testKey=&unit=` | Comparable values only, plus a count of excluded values | `VIEW` |
 
 Trend responses contain values and dates only, with no interpretation such as "normal" or "abnormal".
+
+The timeline returns `entries`, newest first, and `dateUnknown`, the undated records. A date range doesn't hide undated records, because they can't be placed inside or outside it. `types` still applies to them. The timeline isn't paginated yet. It currently covers conditions (by onset date), visits, symptoms, and medications (by start date).
+
+Until documents exist in Phase 11, a request with a `sourceDocumentId` returns 404 (`SOURCE_DOCUMENT_NOT_FOUND`), so manually entered records are always `USER_REPORTED`. `DOCUMENTED` without a document returns 400 (`SOURCE_DOCUMENT_REQUIRED`). Provenance can't be changed by an update.
 
 ## 6. Documents and extraction
 

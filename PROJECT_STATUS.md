@@ -2,8 +2,8 @@
 ## Project Status
 
 **Last updated:** 2026-11-05
-**Current phase:** Phase 4 complete. Phase 5 plan awaiting approval. Phase 3 moved to after Phase 5 (D-016).
-**Application code:** Accounts, sessions, and audit log. No health features or family tables exist.
+**Current phase:** Phases 5 to 8 complete. Phase 3 (deployment) is waiting on the owner. Phase 9 is next.
+**Application code:** Accounts, families, profiles and access grants, conditions, allergies, dietary items, emergency contacts, visits, symptoms, medications with schedules and adherence, and the timeline. No documents or AI.
 
 ## Environment
 
@@ -34,10 +34,10 @@
 | 2 | Design baseline: finalize `docs/04` to `docs/08`, fix inconsistencies | Done |
 | 4 | Identity, sessions, and audit log | Done |
 | 5 | Family, profiles, and authorization | Done |
-| 3 | Deploy online with HTTPS (runs after Phase 5; needs budget, domain, and hosting account) | Not started |
+| 3 | Deploy online with HTTPS (runs after Phase 5; needs budget, domain, and hosting account) | Waiting on the owner |
 | 6 | Conditions, allergies, restrictions, emergency contacts, and provenance | Done |
 | 7 | Visits, symptoms, and first timeline | Done |
-| 8 | Medication, adherence, and reminders | Not started |
+| 8 | Medication, adherence, and reminders | Done |
 | 9 | Lab results and trends | Not started |
 | 10 | Food log | Not started |
 | 11 | Document upload and private storage | Not started |
@@ -54,10 +54,12 @@
 
 | Suite | Result | Where |
 |---|---|---|
-| Backend unit tests (7) and integration tests (45) | Pass | Local (temporary PostgreSQL 18) and CI (Testcontainers) |
-| Frontend tests (12), lint, type check, build | Pass | Local and CI |
-| Auth flow through the Vite dev proxy against the real backend | Pass, by hand with `curl` | Local |
-| Docker image builds, and the auth flow through nginx | Pass | CI only |
+| Backend unit tests (7) and integration tests (143) | Pass | Local (temporary PostgreSQL 18). CI: see the Git note below. |
+| Frontend tests (42), lint, type check, build | Pass | Local. CI: see the Git note below. |
+| Full flow from registration to linking and deleting a profile, through the Vite dev proxy against the real backend | Pass, with `curl` | Local |
+| Docker image builds, and the auth flow through nginx | Last passed at Phase 4. Only CI can check this. | CI only |
+
+**Git note:** Phases 5 to 8 are local commits until pushed, and CI only runs after a push.
 
 ## Known issues
 
@@ -67,21 +69,20 @@
 - If login fails straight after a successful registration, the user stays on the form, and resubmitting reports the email as taken. They can switch to sign in.
 - `npm audit` reports 10 moderate findings, all in development tools (ESLint's dependencies). Production dependencies report none. The only fix offered downgrades ESLint.
 - Mockito prints a future-JDK warning about self-attaching during tests. Harmless today.
+- Invitations have no email delivery, so a manager passes the code on by hand, and they can't be revoked before they expire.
+- Family members can't be removed and family roles can't be changed after joining.
+- A recorded dose can't be corrected. Taken or skipped is final in this version.
+- Reminders are the in-app "Doses due" list. Nothing is sent outside the app, and the list only updates when opened.
+- Record lists in the UI show the first 100 items, and the timeline isn't paginated.
+- Records can't be `DOCUMENTED` until documents exist in Phase 11.
 
 ## Next step
 
-Approve or change this Phase 5 plan. Do not start until the owner approves.
+1. **Owner:** create the local databases (`README.md`), try the app in a browser, and report anything wrong.
+2. **Owner:** review `DECISIONS.md`, D-019.
+3. **Phase 9: lab results and trends.** Routine, so it can start without a further decision. Phases 10 and 11 follow.
 
-**Phase 5: family, profiles, and authorization** (see `docs/04` section 3, `docs/05` section 4, and `docs/06` section 3)
+Decisions the owner must make later:
 
-- **New dependencies:** none expected.
-- **Migration:** `V3` adds `family`, `family_membership`, `health_profile`, and `profile_access_grant`.
-- **Backend:** packages `com.familyhealth.family` and `.profile`, including the single access check, `profileAccess.require(account, profileId, level)`. Endpoints from `docs/05` section 4: families, invitations, profiles, and grants.
-- **Frontend:** create a family, add and list profiles, and manage access.
-- **Rules:** grants are the only source of access; no access returns 404 and too low a level returns 403; a manager has no automatic access to another adult's records; at least one account always holds `MANAGE`.
-
-**Question to settle before starting:** `docs/04` has no table for family invitations, although `docs/05` has invitation endpoints. Phase 5 would add `family_invitation`, storing only a hash of the token, with an expiry.
-
-**Acceptance tests:** the authorization matrix from `docs/07` section 3 on every profile endpoint, the rules above, audit events for grant changes and profile deletion, and frontend states. Then run all checks locally and in CI.
-
-**On approval:** implement, commit, verify the GitHub account and private status, push, confirm CI, report, and stop.
+- **Phase 3:** hosting budget, domain, and hosting account. Close the `/auth/register` rate limit first.
+- **Phase 12:** the AI provider, an API key, and a usage budget (`docs/06` section 8.6).

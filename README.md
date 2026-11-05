@@ -2,7 +2,7 @@
 
 A web application that helps individuals and families organize health records. It is a record-management and support tool. It does not diagnose, prescribe, or replace healthcare professionals.
 
-**Status:** early prototype. Accounts, sign-in, and the audit log work, but there are no health features yet. See [PROJECT_STATUS.md](PROJECT_STATUS.md).
+**Status:** early prototype. Accounts, families, profiles with access control, health history, visits, symptoms, medications with in-app reminders, and the timeline work. Documents and AI features don't exist yet. See [PROJECT_STATUS.md](PROJECT_STATUS.md).
 
 **Use synthetic data only.** Do not enter real health information.
 
@@ -46,6 +46,8 @@ npm run dev
 ```
 
 Open `http://localhost:5173`. You should see the sign-in page, where you can create an account.
+
+To try sharing, create a second account in a private browser window. The first account creates a family and an invitation for the second account's email, and the second pastes the code into **Join a family**. There is no email delivery yet.
 
 The `dev` profile turns off the `Secure` cookie attribute, because local development uses plain HTTP. Every other environment keeps it on unless `SESSION_COOKIE_SECURE` is set to `false`.
 
