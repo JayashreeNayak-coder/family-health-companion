@@ -2,7 +2,7 @@
 ## Project Status
 
 **Last updated:** 2026-11-05
-**Current phase:** Phase 4 complete, pending the CI result below. Phase 5 plan awaiting approval. Phase 3 moved to after Phase 5 (D-016).
+**Current phase:** Phase 4 complete. Phase 5 plan awaiting approval. Phase 3 moved to after Phase 5 (D-016).
 **Application code:** Accounts, sessions, and audit log. No health features or family tables exist.
 
 ## Environment
@@ -54,10 +54,10 @@
 
 | Suite | Result | Where |
 |---|---|---|
-| Backend unit tests (7) and integration tests (45) | Pass | Local (temporary PostgreSQL 18) |
-| Frontend tests (12), lint, type check, build | Pass | Local |
+| Backend unit tests (7) and integration tests (45) | Pass | Local (temporary PostgreSQL 18) and CI (Testcontainers) |
+| Frontend tests (12), lint, type check, build | Pass | Local and CI |
 | Auth flow through the Vite dev proxy against the real backend | Pass, by hand with `curl` | Local |
-| CI, including Docker image builds and the auth flow through nginx | CI_RESULT | CI only |
+| Docker image builds, and the auth flow through nginx | Pass | CI only |
 
 ## Known issues
 
