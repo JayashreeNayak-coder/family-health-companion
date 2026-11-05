@@ -2,19 +2,20 @@
 ## Project Status
 
 **Last updated:** 2026-11-05
-**Current phase:** Phase 0 complete. Phase 1 plan awaiting approval.
-**Application code:** None yet.
+**Current phase:** Phase 1 complete. Waiting for the owner's approval before Phase 2.
+**Application code:** Technical foundation only. No health features or domain tables exist.
 
-## Environment setup
+## Environment
 
 | Item | State |
 |---|---|
-| Project at `C:\dev\family-health-companion` | Done, checksums matched the source copy |
-| Git repository, `main`, local identity | Done, no commits yet |
-| Old copy in OneDrive | Still present, to be removed after the project is reopened from the new location |
-| Private GitHub repository | `origin` set. Sign-in, access, and private visibility not yet verified. Nothing pushed. |
-| WSL2 and Docker Engine | Not set up. Compatible, but needs administrator rights and a restart, and memory is tight. Owner to choose between this and the local PostgreSQL fallback. |
-| `C:\Users\deban\.git` | Kept. Owner asked to keep it until the new repository and remote are verified. |
+| Project at `C:\dev\family-health-companion` | Done |
+| Git repository and local identity | Done |
+| Private GitHub repository | Connected. Account and private visibility verified before pushing. |
+| Local databases in the Windows PostgreSQL service | **Not created.** The owner runs the commands in `README.md`, because they need the PostgreSQL admin password. |
+| Local Docker / WSL2 | Not set up, by decision (`DECISIONS.md`, D-011) |
+| Old copy in OneDrive | Still present. Awaiting the owner's confirmation to remove. |
+| `C:\Users\deban\.git` | Still present. Awaiting the owner's confirmation to remove. |
 
 ## Documents
 
@@ -29,8 +30,8 @@
 | Phase | Scope | State |
 |---|---|---|
 | 0 | Repository and implementation planning | Done |
-| 1 | Repository foundation and minimal end-to-end app | Plan awaiting approval |
-| 2 | Design baseline: review `docs/04` to `docs/08`, fix inconsistencies | Drafts ready |
+| 1 | Repository foundation and minimal end-to-end app | Done |
+| 2 | Design baseline: review `docs/04` to `docs/08`, fix inconsistencies | Drafts ready, awaiting approval to start |
 | 3 | Deploy the skeleton online with HTTPS | Not started |
 | 4 | Identity, sessions, and audit log | Not started |
 | 5 | Family, profiles, and authorization | Not started |
@@ -51,11 +52,16 @@
 
 ## Tests
 
-No tests exist and none have been run.
+| Suite | Result | Where |
+|---|---|---|
+| Backend integration tests (8) | Pass | Local (temporary PostgreSQL 18) and CI (Testcontainers) |
+| Frontend tests (4), lint, type check, build | Pass | Local and CI |
+| Docker image builds and full-stack check through nginx | Pass | CI only |
 
-## Blocked on the owner
+There are no backend unit tests yet, because there is no business logic.
 
-1. Final go-ahead on the exact Phase 1 files, acceptance criteria, and tests.
-2. Choice of WSL2 or the local PostgreSQL fallback.
-3. GitHub sign-in as `JayashreeNayak-coder`, so access can be verified.
-4. Review of `docs/04` to `docs/08`.
+## Known issues
+
+- `npm audit` reports 10 moderate findings, all in development tools (ESLint's dependencies). Production dependencies report none. The only fix offered downgrades ESLint.
+- Mockito prints a future-JDK warning about self-attaching during tests. Harmless today.
+- Schema validation proves little until entities exist in Phase 4.
