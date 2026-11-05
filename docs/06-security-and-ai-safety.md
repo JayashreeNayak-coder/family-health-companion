@@ -1,8 +1,8 @@
 # Family Health Companion
-## Security and AI Safety — Draft v0.1
+## Security and AI Safety — v1.0
 
-**Status:** DRAFT for review. Not approved and not an implementation requirement until reviewed.
-**Implementation state:** Nothing in this document has been implemented.
+**Status:** Approved baseline. Written from the problem statement, SRS, and system design; the owner delegated final content (`DECISIONS.md`, D-015). Change it through the normal approval process.  
+**Implementation state:** See `PROJECT_STATUS.md`. A described item may not be built yet.  
 **Based on:** `02-srs.md` sections 4 and 5, `03-system-design.md` section 7, `CLAUDE.md` sections 6 to 8.
 
 **This prototype is not production-certified and has had no formal security review.** It must hold synthetic data only in public demonstrations.
@@ -16,7 +16,7 @@
 | Account data | Email, display name | Authorized access only. Avoid in logs. |
 | Public by user choice | Approved emergency card items | Visible to anyone with the link |
 
-## 2. Authentication [Proposal]
+## 2. Authentication
 
 | Control | Decision | Reason |
 |---|---|---|
@@ -31,9 +31,9 @@
 
 Deferred, as `03-system-design.md` section 7 allows: multi-factor login, email verification, and self-service password recovery. The demo environment resets passwords through an administrator procedure.
 
-## 3. Authorization model [Proposal — main review item]
+## 3. Authorization model
 
-The SRS requires "family-member-specific access permissions" but does not define them.
+The SRS requires "family-member-specific access permissions" but does not define them. This model defines them. Rules 3 and 4 are recorded in `DECISIONS.md`, D-013.
 
 ### Levels
 | Level | Can do |
@@ -73,7 +73,7 @@ The SRS requires "family-member-specific access permissions" but does not define
 
 - **Allowed types:** PDF, JPEG, PNG. HTML, SVG, and Office files are rejected.
 - **Type check:** the file's actual content signature is checked, never only the extension or the browser's claimed type.
-- **Size limit [Proposal]:** 10 MB per file, enforced by both nginx and Spring.
+- **Size limit:** 10 MB per file, enforced by both nginx and Spring.
 - **Storage:** private bucket, with random keys containing no personal data.
 - **Download:** streamed through the backend after an access check, sent as an attachment.
 - **Not included in the prototype:** virus scanning. Listed as a limitation.
@@ -147,8 +147,8 @@ The check can therefore only ever flag a conflict. **A recipe with no flag must 
 - A low usage limit on AI.
 - A demo-only reset that cannot run in production configuration.
 
-## 10. Questions for review
+## 10. Resolved review questions
 
-- **Q1.** Do you agree with rules 3 and 4 in section 3? They favour adult privacy over a manager's convenience.
-- **Q2.** Can virus scanning stay out of the prototype?
-- **Q3.** Is deferring email verification and password recovery acceptable for your evaluation and client demonstrations?
+- Virus scanning stays out of the prototype, as a documented limitation to fix before commercial use.
+- Email verification and password recovery are deferred until before real users. An administrator resets demo passwords.
+- The emergency card has the full SRS behaviour: opt-in, approved items only, disable, and rotate.

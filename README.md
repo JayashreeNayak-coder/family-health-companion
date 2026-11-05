@@ -91,9 +91,9 @@ Open `http://localhost:8080`. nginx serves the frontend and forwards `/api/` and
 | [Problem statement](docs/01-problem-statement.md) | Why this exists |
 | [SRS](docs/02-srs.md) | Requirements |
 | [System design](docs/03-system-design.md) | Architecture |
-| [Database design](docs/04-database-design.md) | Draft, awaiting review |
-| [API specification](docs/05-api-specification.md) | Draft, awaiting review |
-| [Security and AI safety](docs/06-security-and-ai-safety.md) | Draft, awaiting review |
-| [Testing strategy](docs/07-testing-strategy.md) | Draft, awaiting review |
-| [Deployment guide](docs/08-deployment-guide.md) | Draft, awaiting review |
+| [Database design](docs/04-database-design.md) | Tables and ownership |
+| [API specification](docs/05-api-specification.md) | Endpoints and conventions |
+| [Security and AI safety](docs/06-security-and-ai-safety.md) | Access rules and safety |
+| [Testing strategy](docs/07-testing-strategy.md) | What gets tested |
+| [Deployment guide](docs/08-deployment-guide.md) | Environments and hosting |
 | [Decisions](DECISIONS.md) | Approved decisions |

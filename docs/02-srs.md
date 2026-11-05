@@ -1,9 +1,9 @@
 
 
 # Family Health Companion
-## Software Requirements Specification — MVP v0.2
+## Software Requirements Specification — MVP v0.3
 
-**Status:** MVP baseline  
+**Status:** Approved MVP baseline  
 **Purpose:** Define the first usable release of Family Health Companion. This document is the reference for system design, implementation, and testing.
 
 ## 1. Product Overview
@@ -31,9 +31,11 @@ It is a health-record management and support tool—not a diagnostic or treatmen
 
 ### 3.2 Health Records
 - Record known medical conditions and relevant history.
+- Record allergies, dietary restrictions, food preferences, and emergency contacts for each profile.
 - Record doctor visits, symptoms, medications, and treatment information as reported or documented.
 - Upload and organize PDFs, images, scans, lab reports, and prescriptions.
-- Preserve original uploaded documents.
+- Preserve original uploaded documents. The system never removes or alters an original on its own, including when extraction fails.
+- Allow users to explicitly delete their records and uploaded documents.
 - Link extracted information to its source document.
 - Support manual entry and editing.
 
@@ -49,7 +51,7 @@ It is a health-record management and support tool—not a diagnostic or treatmen
 - Show recorded conditions, symptoms, visits, medications, and lab results.
 - Provide summaries based only on available records.
 - Identify missing, outdated, or conflicting information where possible.
-- Distinguish user-reported information, verified/documented records, and AI-generated summaries.
+- Distinguish user-reported information, documented records, and AI-generated summaries. "Documented" means taken from an attached document, not that the document has been verified.
 
 ### 3.5 Medication Tracking
 - Store medication name, dosage as recorded, schedule, and relevant dates.
@@ -61,7 +63,8 @@ It is a health-record management and support tool—not a diagnostic or treatmen
 - Store lab values with test name, value, unit, date, and source where available.
 - Display basic historical trends for comparable values.
 - Avoid interpreting results as a diagnosis.
-- Clearly indicate when values, units, or dates are missing.
+- Clearly indicate when values, units, or dates are missing, and never guess them.
+- Exclude values with a missing unit or date from trends.
 
 ### 3.7 Food and Symptom Tracking
 - Allow users to log meals and symptoms manually.

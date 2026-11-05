@@ -1,9 +1,9 @@
 
 
 # Family Health Companion
-## System Design — Prototype v0.1
+## System Design — Prototype v0.2
 
-**Status:** Proposed baseline  
+**Status:** Approved baseline  
 **Delivery goal:** Online, functional prototype for college submission, teacher review, and client demonstrations.  
 **Long-term goal:** Evolve the same codebase into a secure, sellable family health management product.
 
@@ -73,6 +73,7 @@ Each module should own its entities, repositories, services, controllers, and DT
 ### Identity and Access
 - Prototype login and user accounts.
 - Role and profile access checks.
+- Minimal audit log of security-sensitive actions.
 - Designed to support stronger authentication later.
 
 ### Family
@@ -83,8 +84,9 @@ Each module should own its entities, repositories, services, controllers, and DT
 
 ### Health Records
 - Medical history.
+- Allergies, dietary restrictions, food preferences, and emergency contacts.
 - Doctor visits.
-- Symptoms.
+- Symptoms, whether part of a visit or logged on their own.
 - Health timeline.
 - Record summaries.
 
@@ -103,10 +105,11 @@ Each module should own its entities, repositories, services, controllers, and DT
 - Test name, value, unit, date, and source.
 - Basic historical trend data.
 
-### Food and Symptoms
+### Food Log
 - Meal logs.
-- Symptom logs.
 - Chronological display.
+
+Symptoms belong to Health Records. The SRS groups food and symptom tracking from the user's point of view, and the two still appear together on the timeline.
 
 ### Meal Assistant
 - General recipe mode.
@@ -137,6 +140,7 @@ The AI provider must not be called directly from frontend code. API keys stay on
 | Timeline | Working, based on database records |
 | Document upload | Working with private storage |
 | AI document extraction | Working, review before saving |
+| Voice transcription | Working, text returned for user editing |
 | Medication tracking | Working |
 | Lab history | Working, basic trends |
 | Food/symptom logs | Working |
@@ -234,11 +238,12 @@ Even for a college prototype:
 - Never expose AI API keys in frontend code.
 - Use HTTPS.
 - Avoid committing secrets to Git.
-- Provide a way to delete demo records and uploaded files.
+- Provide a way to delete demo records and uploaded files. This is separate from user deletion: only an explicit action removes data, and the system never removes originals on its own.
+- Record security-sensitive actions in a minimal audit log.
 - Do not use real health data in public demos.
 - Label AI-generated summaries and extracted data clearly.
 
-Production hardening later includes a formal security review, stronger account recovery, audit controls, retention policies, tested disaster recovery, and privacy/legal review.
+Production hardening later includes a formal security review, stronger account recovery, advanced audit reporting, retention policies, tested disaster recovery, and privacy/legal review.
 
 ## 8. Repository Structure
 
@@ -265,18 +270,29 @@ family-health-companion/
 
 ## 9. Implementation Sequence
 
-1. Repository setup and development environment.
-2. Database design and Flyway migrations.
-3. Identity, family, and profile access.
-4. Health records and timeline.
-5. Document upload and private storage.
-6. AI extraction with user approval.
-7. Medication and lab records.
-8. Food and symptom logging.
-9. General and health-aware meal assistant.
-10. Health summary and emergency card.
-11. PDF export.
-12. Testing, demo data, deployment, and college presentation preparation.
+Tests are written within each phase, and CI runs from Phase 1. Each phase requires approval before it starts. `PROJECT_STATUS.md` tracks progress.
+
+1. Repository foundation and minimal end-to-end app.
+2. Design baseline documents.
+3. Deploy the skeleton online with HTTPS.
+4. Identity, sessions, and audit log.
+5. Family, profiles, and authorization.
+6. Conditions, allergies, restrictions, emergency contacts, and record provenance.
+7. Visits, symptoms, and first timeline.
+8. Medication, adherence, and reminders.
+9. Lab results and trends.
+10. Food log.
+11. Document upload and private storage.
+12. AI layer, then extraction with review and approval.
+13. Voice transcription.
+14. General meal assistant.
+15. Health-aware meal assistant.
+16. Record-based summaries.
+17. Emergency card.
+18. PDF export.
+19. Synthetic demo data, security review, and presentation preparation.
+
+Medication and lab records come before extraction because approved drafts have to become those records. Database tables arrive through Flyway migrations with the phase that needs them.
 
 ## 10. Deferred Until Product Validation
 

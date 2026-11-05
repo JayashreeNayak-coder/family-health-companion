@@ -1,11 +1,9 @@
 # Family Health Companion
-## Database Design — Draft v0.1
+## Database Design — v1.0
 
-**Status:** DRAFT for review. Not approved and not an implementation requirement until reviewed.
-**Implementation state:** Nothing in this document has been implemented.
-**Based on:** `01-problem-statement.md`, `02-srs.md` (MVP v0.2), `03-system-design.md` (v0.1), `CLAUDE.md`.
-
-Items marked **[Proposal]** go beyond what the source documents state. Questions for the reviewer are in section 10.
+**Status:** Approved baseline. Written from the problem statement, SRS, and system design; the owner delegated final content (`DECISIONS.md`, D-015). Change it through the normal approval process.  
+**Implementation state:** See `PROJECT_STATUS.md`. A described item may not be built yet.  
+**Based on:** `01-problem-statement.md`, `02-srs.md` (MVP v0.3), `03-system-design.md` (v0.2), `CLAUDE.md`.
 
 ## 1. Conventions
 
@@ -22,7 +20,7 @@ Items marked **[Proposal]** go beyond what the source documents state. Questions
 | Foreign keys | Always declared and indexed |
 | Dosages and results | Stored as recorded. Never normalized in a way that changes the meaning. |
 
-### 1.1 Dates on health events [Proposal]
+### 1.1 Dates on health events
 
 The SRS requires date and time "where available", so a health event may have only a date, or no date at all.
 
@@ -30,7 +28,7 @@ The SRS requires date and time "where available", so a health event may have onl
 - `timestamptz` is used only for system events such as `created_at`.
 - Records with no date appear in a labelled "Date unknown" group on the timeline. The system never substitutes the upload or entry date.
 
-### 1.2 Record provenance [Proposal]
+### 1.2 Record provenance
 
 Every confirmed health record carries:
 
@@ -101,9 +99,9 @@ Every profile-owned table has `profile_id uuid NOT NULL` referencing `health_pro
 | `date_of_birth` | date | NULL |
 | `is_dependent` | boolean | NOT NULL |
 
-Unique: (`family_id`, `linked_account_id`). Sex, blood group, and government or insurance identifiers are deliberately not collected, because no MVP feature requires them (see Q3).
+Unique: (`family_id`, `linked_account_id`). Sex, blood group, and government or insurance identifiers are deliberately not collected, because no MVP feature requires them (see Q1).
 
-### `profile_access_grant` [Proposal]
+### `profile_access_grant`
 | Column | Type | Notes |
 |---|---|---|
 | `profile_id` | uuid | FK, part of unique key |
@@ -127,7 +125,7 @@ All tables in this section have `profile_id` and the provenance columns from sec
 
 `emergency_contact` (`profile_id`, `name` NOT NULL, `relationship`, `phone` NOT NULL) has no provenance columns because it is not a health record.
 
-`allergy` and `dietary_restriction` are not named in the SRS Health Records section or in any system design module, but the meal assistant and emergency card depend on them. This draft places them in Health Records (see Q2).
+`allergy`, `dietary_restriction`, and `emergency_contact` belong to Health Records (SRS 3.2). The meal assistant and emergency card depend on them.
 
 ## 5. Medication and lab results
 
@@ -199,7 +197,7 @@ Per-item status allows partial approval. Draft data stays out of the confirmed r
 
 Notes:
 
-- **`emergency_card_item` stores approved text, not references [Proposal].** The card can only show what the user explicitly approved. An edit to a record cannot silently change or expand a public card. The UI flags when a source record has changed.
+- **`emergency_card_item` stores approved text, not references.** The card can only show what the user explicitly approved. An edit to a record cannot silently change or expand a public card. The UI flags when a source record has changed.
 - **Only a hash of the emergency token is stored.** A database leak does not reveal working links.
 - **`audit_event` is append-only and holds no health details.** Its actor and target references are deliberately not foreign keys, so the history outlives deleted records.
 
@@ -212,7 +210,7 @@ Notes:
 - `(user_account_id)` on `profile_access_grant` to list a user's profiles.
 - `(profile_id, occurred_at DESC)` and `(actor_account_id, occurred_at DESC)` on `audit_event`.
 
-### Deletion [Proposal]
+### Deletion
 The source documents require preserving originals and also providing a way to delete demo records and files. This draft treats these as compatible:
 
 - The system never deletes or alters an original on its own, including when extraction fails.
@@ -243,9 +241,7 @@ Migrations arrive with the phase that needs them, rather than as one schema up f
 
 Provenance columns exist from each table's first migration. Their foreign keys are added once the target table exists: `source_document_id` in Phase 11 and `extraction_draft_item_id` in Phase 12.
 
-## 10. Questions for review
+## 10. Resolved review questions
 
-- **Q1. Permissions:** is the grant model in `06-security-and-ai-safety.md` section 3 what you want? This is the most important review item.
-- **Q2. Allergies and restrictions:** do you agree they belong in Health Records? This adds them to the module list in `03-system-design.md`.
-- **Q3. Blood group:** should it be collected? It is common on emergency cards, but no document requires it. This draft leaves it out to avoid unnecessary data collection.
-- **Q4. Hard delete:** do you agree that deletes are permanent, with no recycle bin in the prototype?
+- Blood group is not collected.
+- Deletes are permanent, with no recycle bin in the prototype.

@@ -1,8 +1,8 @@
 # Family Health Companion
-## API Specification — Draft v0.1
+## API Specification — v1.0
 
-**Status:** DRAFT for review. Not approved and not an implementation requirement until reviewed.
-**Implementation state:** Nothing in this document has been implemented.
+**Status:** Approved baseline. Written from the problem statement, SRS, and system design; the owner delegated final content (`DECISIONS.md`, D-015). Change it through the normal approval process.  
+**Implementation state:** See `PROJECT_STATUS.md`. A described item may not be built yet.  
 **Based on:** `02-srs.md`, `03-system-design.md`, `04-database-design.md` (draft), `CLAUDE.md`.
 
 This document defines conventions and the endpoint inventory. Once implemented, the generated OpenAPI document becomes the detailed field-level reference, and this file stays as the summary.
@@ -59,9 +59,9 @@ Error messages never contain health details, stack traces, or SQL.
 
 Returning 404 for profiles a user cannot access means the API does not reveal that a given profile exists.
 
-## 3. Authentication [Proposal]
+## 3. Authentication
 
-Phase 4 proposal: a server-side session in a cookie, with CSRF protection.
+Phase 4 uses a server-side session in a cookie, with CSRF protection.
 
 | Method | Path | Purpose |
 |---|---|---|
@@ -192,7 +192,7 @@ The public endpoint is rate limited and returns `Cache-Control: no-store` and `X
 
 No other actuator endpoint is exposed.
 
-## 10. Questions for review
+## 10. Resolved review questions
 
-- **Q1.** Should adding a family member's account work through invitation links (as drafted), or is that more than the prototype needs?
-- **Q2.** Should someone with `VIEW` be able to generate AI summaries? This draft says yes, since summaries reveal nothing beyond what `VIEW` already shows, though it does use AI quota.
+- Family accounts are added through invitation links.
+- `VIEW` access can generate AI summaries, subject to usage limits.

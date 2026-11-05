@@ -1,8 +1,8 @@
 # Family Health Companion
-## Testing Strategy — Draft v0.1
+## Testing Strategy — v1.0
 
-**Status:** DRAFT for review. Not approved and not an implementation requirement until reviewed.
-**Implementation state:** No tests exist yet.
+**Status:** Approved baseline. Written from the problem statement, SRS, and system design; the owner delegated final content (`DECISIONS.md`, D-015). Change it through the normal approval process.  
+**Implementation state:** See `PROJECT_STATUS.md`. A described item may not be built yet.  
 **Based on:** `02-srs.md` section 9, `03-system-design.md` section 2, `CLAUDE.md` section 9.
 
 ## 1. Principles
@@ -20,7 +20,7 @@
 | Unit | JUnit 5, Mockito, AssertJ | Business rules and validation | Every build |
 | Integration | Spring Boot Test, Testcontainers (PostgreSQL 18), MockMvc | Migrations, repositories, security, full API flows | Every build |
 | Frontend | Vitest, React Testing Library | Components, states, labels, and errors | Every build |
-| End-to-end [Proposal] | Playwright, a dependency to approve later | A few critical journeys against the full stack | Added in Phase 19 |
+| End-to-end | Playwright, a dependency to approve later | A few critical journeys against the full stack | Added in Phase 19 |
 | AI safety | Fake provider, plus optional real provider runs | Safety behaviour | Fake on every build; real on demand |
 
 Backend test classes follow the Maven convention: `*Test` runs under Surefire and `*IntegrationTest` under Failsafe.
@@ -124,7 +124,7 @@ GitHub Actions runs on each push and pull request. All of the following must pas
 
 Coverage is reported, but no percentage target is enforced. The authorization matrix and the areas above are the real requirements, and a percentage can be met without testing them.
 
-## 7. Questions for review
+## 7. Resolved review questions
 
-- **Q1.** Do you agree with adding Playwright end-to-end tests only in Phase 19, to keep earlier phases small?
-- **Q2.** Are you comfortable with real AI safety runs being manual, with their cost, rather than part of CI?
+- Playwright end-to-end tests are added in Phase 19.
+- Real AI safety runs are manual, before each demo and each prompt or model change.

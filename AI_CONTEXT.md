@@ -3,14 +3,25 @@
 
 Read `CLAUDE.md` first, then `PROJECT_STATUS.md`. This file holds context that those files and the code don't make obvious.
 
+## Resuming in a new conversation
+This repository is the project's memory, so a new conversation doesn't need the earlier chat. To resume, the owner can say: "Continue from PROJECT_STATUS.md."
+
+1. Work from `C:\dev\family-health-companion`. Any copy in OneDrive is old and out of date.
+2. Read `CLAUDE.md`, `PROJECT_STATUS.md`, and this file, then continue from "Next step" in `PROJECT_STATUS.md`.
+3. Before ending any phase, update `PROJECT_STATUS.md` and this file, so the next conversation can continue from them.
+
+## Saving tokens (owner's request)
+- Read only the documents and sections the current phase needs, not all of `docs/`. Search before reading whole files.
+- Don't spawn subagents unless asked. Keep replies short.
+- Don't repeat earlier plans or paste long logs. Filter command output to what matters.
+- Keep plans brief, but still stop for approval between phases.
+
 ## Current state
 - Only the Phase 1 technical foundation exists, with no domain code. See `PROJECT_STATUS.md` for the phase and what is blocked.
-- `docs/01` to `docs/03` are the owner's source documents.
-- `docs/04` to `docs/08` are **AI-written drafts**. Don't treat them as requirements until `PROJECT_STATUS.md` says they've been reviewed.
+- `docs/01` to `docs/08` are the approved baseline.
 
 ## Git
 - The repository root must be `C:\dev\family-health-companion`. Check with `git rev-parse --show-toplevel`.
-- `C:\Users\deban\.git` is an unrelated, empty repository at the home folder. Never run Git commands against it, and don't delete it without the owner's confirmation.
 - The commit identity is set in this repository's local config. Don't change global Git config.
 - This repository uses Git Credential Manager through local config, because the global helper is different.
 - Commit or push only when the owner asks.

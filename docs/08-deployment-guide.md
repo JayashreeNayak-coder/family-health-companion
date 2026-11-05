@@ -1,8 +1,8 @@
 # Family Health Companion
-## Deployment Guide — Draft v0.1
+## Deployment Guide — v1.0
 
-**Status:** DRAFT for review. Not approved and not an implementation requirement until reviewed.
-**Implementation state:** Nothing has been deployed. Local setup is in `README.md`. The optional WSL2 commands in section 2 have not been run. Sections 4 onward become usable after Phase 3.
+**Status:** Approved baseline. Written from the problem statement, SRS, and system design; the owner delegated final content (`DECISIONS.md`, D-015). Change it through the normal approval process.  
+**Implementation state:** See `PROJECT_STATUS.md`. A described item may not be built yet.  
 **Based on:** `03-system-design.md` sections 6 to 8, `CLAUDE.md`.
 
 ## 1. Environments
@@ -92,7 +92,7 @@ Integration tests would run inside WSL, so a Linux JDK is needed. The exact comm
 
 Compose ports are bound to `127.0.0.1` only, so nothing is exposed on the local network.
 
-## 4. Demo environment topology [Proposal]
+## 4. Demo environment topology
 
 The frontend and API share one origin:
 
@@ -144,11 +144,11 @@ The recommended starting point is one small VPS running Docker Compose, with a l
 
 ## 8. Demo operations
 
-- **Demo reset [Proposal]:** a command available only in the demo profile. It clears demo data and stored files, then loads the synthetic data set.
+- **Demo reset:** a command available only in the demo profile. It clears demo data and stored files, then loads the synthetic data set.
 - **Before each presentation:** reset demo data, check the health endpoint, test login and one AI call, and confirm the demo banner is visible.
 - **If AI is unavailable during a demo:** manual workflows still work, and pre-reviewed synthetic results can demonstrate the review screens.
 
-## 9. Questions for review
+## 9. Open for Phase 3
 
 - **Q1.** What monthly hosting and AI budget can the demo environment have?
 - **Q2.** Do you already have a domain, and is there a date the demo needs to be online by?
