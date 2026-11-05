@@ -1,0 +1,99 @@
+# Family Health Companion
+
+A web application that helps individuals and families organize health records. It is a record-management and support tool. It does not diagnose, prescribe, or replace healthcare professionals.
+
+**Status:** early prototype. The repository currently contains only the technical foundation, with no health features yet. See [PROJECT_STATUS.md](PROJECT_STATUS.md).
+
+**Use synthetic data only.** Do not enter real health information.
+
+## Stack
+
+React and TypeScript (Vite), Java 25 and Spring Boot, PostgreSQL 18, Spring Data JPA, Flyway, Docker.
+
+## Run locally
+
+These commands are for Windows PowerShell. You need JDK 25, Node 22 (22.13 or later), and PostgreSQL 18. Docker isn't required for local development.
+
+### 1. Create the local databases
+
+Run `psql -h localhost -U postgres`, then run the following, replacing both passwords with ones you choose:
+
+```sql
+CREATE ROLE family_health_dev LOGIN PASSWORD 'choose-a-dev-password';
+CREATE DATABASE family_health_dev OWNER family_health_dev;
+CREATE ROLE family_health_test LOGIN PASSWORD 'choose-a-test-password';
+CREATE DATABASE family_health_test OWNER family_health_test;
+```
+
+### 2. Start the backend
+
+```powershell
+cd backend
+$env:DB_PASSWORD = 'your-dev-password'
+.\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=dev"
+```
+
+The backend runs at `http://localhost:8081`, and Flyway applies migrations at startup.
+
+### 3. Start the frontend
+
+In a second terminal:
+
+```powershell
+cd frontend
+npm ci
+npm run dev
+```
+
+Open `http://localhost:5173`. The page should say **Backend connected**.
+
+## Tests
+
+### Backend
+
+```powershell
+cd backend
+$env:TEST_DB_URL = 'jdbc:postgresql://localhost:5432/family_health_test'
+$env:TEST_DB_USERNAME = 'family_health_test'
+$env:TEST_DB_PASSWORD = 'your-test-password'
+.\mvnw.cmd verify
+```
+
+Without `TEST_DB_URL`, integration tests start PostgreSQL through Testcontainers, which requires Docker. CI works this way.
+
+`.\mvnw.cmd test` runs unit tests only and needs no database.
+
+### Frontend
+
+```powershell
+cd frontend
+npm run lint
+npm run typecheck
+npm test
+npm run build
+```
+
+## Run the full stack with Docker
+
+This requires Docker, which isn't set up on the current development machine, so CI runs this check.
+
+```sh
+cp .env.example .env    # then set DB_PASSWORD in .env
+docker compose up --build
+```
+
+Open `http://localhost:8080`. nginx serves the frontend and forwards `/api/` and `/actuator/health` to the backend. Other actuator paths aren't forwarded.
+
+## Documentation
+
+| Document | Purpose |
+|---|---|
+| [Problem statement](docs/01-problem-statement.md) | Why this exists |
+| [SRS](docs/02-srs.md) | Requirements |
+| [System design](docs/03-system-design.md) | Architecture |
+| [Database design](docs/04-database-design.md) | Draft, awaiting review |
+| [API specification](docs/05-api-specification.md) | Draft, awaiting review |
+| [Security and AI safety](docs/06-security-and-ai-safety.md) | Draft, awaiting review |
+| [Testing strategy](docs/07-testing-strategy.md) | Draft, awaiting review |
+| [Deployment guide](docs/08-deployment-guide.md) | Draft, awaiting review |
+| [Decisions](DECISIONS.md) | Approved decisions |

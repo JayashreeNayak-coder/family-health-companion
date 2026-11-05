@@ -1,0 +1,154 @@
+# Family Health Companion
+## Security and AI Safety — Draft v0.1
+
+**Status:** DRAFT for review. Not approved and not an implementation requirement until reviewed.
+**Implementation state:** Nothing in this document has been implemented.
+**Based on:** `02-srs.md` sections 4 and 5, `03-system-design.md` section 7, `CLAUDE.md` sections 6 to 8.
+
+**This prototype is not production-certified and has had no formal security review.** It must hold synthetic data only in public demonstrations.
+
+## 1. Data classification
+
+| Class | Examples | Handling |
+|---|---|---|
+| Health data | Records, documents, summaries, drafts | Authorized access only. Never logged. |
+| Credentials and secrets | Password hashes, session IDs, API keys, card tokens | Never logged or returned. Secrets come from the environment. |
+| Account data | Email, display name | Authorized access only. Avoid in logs. |
+| Public by user choice | Approved emergency card items | Visible to anyone with the link |
+
+## 2. Authentication [Proposal]
+
+| Control | Decision | Reason |
+|---|---|---|
+| Mechanism | Server-side session with a cookie | Can be revoked immediately, and tokens stay out of browser storage |
+| Cookie | `HttpOnly`, `Secure`, `SameSite=Lax` | Limits theft through scripts and cross-site use |
+| CSRF | Spring Security CSRF, with the token sent as a header by the SPA | Required when using cookie authentication |
+| Passwords | BCrypt through Spring's `DelegatingPasswordEncoder` | Needs no extra dependency, and the algorithm can be upgraded later |
+| Password policy | Minimum 12 characters, no composition rules | Length matters most |
+| Brute force | Rate limit by account and IP, with a generic failure message | Reduces password guessing and account discovery |
+| Session | ID rotated at login; expires after 30 minutes idle and 12 hours in total | Reduces fixation and leftover sessions |
+| Stored sessions | Spring Session JDBC, a dependency to approve in Phase 4 | Sessions survive restarts and can be revoked |
+
+Deferred, as `03-system-design.md` section 7 allows: multi-factor login, email verification, and self-service password recovery. The demo environment resets passwords through an administrator procedure.
+
+## 3. Authorization model [Proposal — main review item]
+
+The SRS requires "family-member-specific access permissions" but does not define them.
+
+### Levels
+| Level | Can do |
+|---|---|
+| `VIEW` | Read the profile's records and documents; use its data for summaries and health-aware meals |
+| `EDIT` | `VIEW`, plus add, change, and delete records, upload documents, and approve drafts |
+| `MANAGE` | `EDIT`, plus manage grants, the emergency card, document deletion, and profile deletion |
+
+### Rules
+1. **Grants are the only source of access.** Belonging to a family does not grant access to anyone's records.
+2. **Dependents:** the family manager who creates a dependent profile receives `MANAGE`.
+3. **Adults with an account:** the adult receives `MANAGE` on their own profile. When a manager-created profile is linked to an adult's account, the manager's access drops to whatever the adult chooses to keep. By default the adult is asked at linking.
+4. **Family managers have no automatic access to another adult's records.**
+5. **A dependent turning 18 changes nothing automatically.** Linking an account is a deliberate step. Date of birth is optional and often missing, so an automatic rule would be unreliable.
+6. **At least one account must always hold `MANAGE`** on a profile.
+
+### Enforcement
+- Every profile operation calls a single check in the service layer, for example `profileAccess.require(account, profileId, Level.EDIT)`.
+- Repository queries for child records always filter on `profile_id`, so an ID from another profile cannot return data.
+- The frontend may hide controls, but the backend alone decides.
+- No access returns 404; insufficient level on a visible profile returns 403.
+
+## 4. Protecting data
+
+| Area | Control |
+|---|---|
+| In transit | HTTPS only in demo and production, with HSTS |
+| At rest | Provider encrypted disks for the database and server-side encryption in object storage |
+| Backups | Encrypted, off-server, restore tested |
+| Secrets | Environment variables on the server, GitHub Actions secrets in CI, `.env` ignored by Git |
+| Logs | IDs and event types only. No record content, file names, prompts, AI responses, or tokens. |
+| Headers | `Content-Security-Policy`, `X-Content-Type-Options`, `Referrer-Policy: no-referrer`, frame blocking |
+
+**Known limitation:** this is not field-level encryption. Someone with database access can read health data. This meets the prototype's SRS section 5 requirement in a basic way, and should be revisited before commercial use.
+
+## 5. Document uploads
+
+- **Allowed types:** PDF, JPEG, PNG. HTML, SVG, and Office files are rejected.
+- **Type check:** the file's actual content signature is checked, never only the extension or the browser's claimed type.
+- **Size limit [Proposal]:** 10 MB per file, enforced by both nginx and Spring.
+- **Storage:** private bucket, with random keys containing no personal data.
+- **Download:** streamed through the backend after an access check, sent as an attachment.
+- **Not included in the prototype:** virus scanning. Listed as a limitation.
+
+## 6. Emergency card
+
+- Off by default. The user selects each item to show.
+- The enable screen states that anyone with the link or QR code may be able to view the card.
+- The token is 256 bits of secure randomness. Only its hash is stored, and the full link is shown only when created.
+- The user can disable the card or rotate the link at any time, and both take effect immediately.
+- The card has no route to the rest of the profile, the documents, or the family.
+- The endpoint is rate limited and blocks caching and indexing.
+
+## 7. Audit trail
+
+Audit events are written for: login success and failure, logout, account changes, grant changes, profile deletion, document upload, download and deletion, draft approval and rejection, emergency card changes, PDF export, and denied access attempts.
+
+Events record who, what, when, and the outcome, and never the health content involved. The SRS requires this, so a minimal version is in scope for the prototype. Advanced audit reporting stays deferred.
+
+## 8. AI safety rules
+
+### 8.1 What AI must never do
+- Diagnose, predict disease or outcomes, or declare someone healthy.
+- Prescribe, stop, or change medication, or suggest doses.
+- Claim that a food caused a symptom, or that a recipe is medically safe.
+- Prescribe a therapeutic diet.
+- Invent missing values, units, dates, or records.
+
+### 8.2 Controls for each feature
+
+| Feature | Data sent to the provider | Safety behaviour |
+|---|---|---|
+| Document extraction | The document only | Draft stays separate until approved per item. Fields not found are `null`. If unreliable, the document is kept and no structured data is created. |
+| Voice transcription | Audio only; not kept after transcription | Text is returned for the user to edit |
+| Summary | Selected records in the chosen period, with dates and source types | Must cite source records. Reports gaps and conflicts. No interpretation. |
+| General meals | Ingredients and request text only | Uses no profile data, even if a member is selected in the UI |
+| Health-aware meals | Allergies, restrictions, and preferences for the selected profile; conditions only if the user confirms they're relevant | Discloses missing data. Never claims safety. |
+
+Names, dates of birth, and contact details are removed from AI requests unless the feature requires them.
+
+### 8.3 Grounding and labelling
+- Summaries are checked after generation: each cited record must exist in the data sent, otherwise the response is rejected.
+- All AI content is visibly labelled in the UI and in PDF exports.
+- The UI distinguishes **User reported**, **From document**, and **AI generated**.
+- PDFs state that they are user-generated record summaries, not official medical certificates.
+- Where relevant, responses encourage talking to a qualified healthcare professional.
+
+### 8.4 Treating documents as untrusted
+Text in an uploaded document could try to instruct the AI (prompt injection). So:
+- Document content is passed as data, separately from instructions.
+- Models receive no tools and cannot read other records.
+- Output must match a strict schema, and any other output is rejected.
+- Nothing becomes a record without human review.
+
+### 8.5 Allergy check limitation
+The system design calls for a backend check of recipes against known allergies. Text matching catches obvious conflicts, but it misses synonyms, derived ingredients, and translations.
+
+The check can therefore only ever flag a conflict. **A recipe with no flag must not be described as safe**, and every health-aware result states that ingredients should be checked by the user.
+
+### 8.6 Provider integration
+- Providers are called only from the backend, behind interfaces such as `DocumentExtractor`, `Transcriber`, `SummaryGenerator`, and `RecipeGenerator`.
+- Prompts and output schemas are versioned files in the backend, and the version is stored with each result.
+- All calls have timeouts and bounded retries. Malformed responses are rejected, not repaired by guessing.
+- Usage limits apply per account and feature, and a global daily limit protects the budget.
+- Provider unavailability returns 503, while all manual workflows keep working.
+- **Provider selection criteria (Phase 12):** no training on submitted data, a clear retention policy, structured output, and document and audio support at an acceptable cost.
+
+## 9. Demo environment
+
+- Synthetic data only, with a visible banner stating this and warning against entering real health information.
+- A low usage limit on AI.
+- A demo-only reset that cannot run in production configuration.
+
+## 10. Questions for review
+
+- **Q1.** Do you agree with rules 3 and 4 in section 3? They favour adult privacy over a manager's convenience.
+- **Q2.** Can virus scanning stay out of the prototype?
+- **Q3.** Is deferring email verification and password recovery acceptable for your evaluation and client demonstrations?
