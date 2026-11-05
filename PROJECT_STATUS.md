@@ -35,7 +35,7 @@
 | 4 | Identity, sessions, and audit log | Done |
 | 5 | Family, profiles, and authorization | Done |
 | 3 | Deploy online with HTTPS (runs after Phase 5; needs budget, domain, and hosting account) | Not started |
-| 6 | Conditions, allergies, restrictions, emergency contacts, and provenance | Not started |
+| 6 | Conditions, allergies, restrictions, emergency contacts, and provenance | Done |
 | 7 | Visits, symptoms, and first timeline | Not started |
 | 8 | Medication, adherence, and reminders | Not started |
 | 9 | Lab results and trends | Not started |

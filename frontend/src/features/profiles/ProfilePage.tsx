@@ -2,12 +2,19 @@ import { useCallback, useEffect, useState } from 'react'
 import { errorMessage } from '../../api/client'
 import { getProfile, type Profile } from '../../api/profiles'
 import { ErrorNote, secondaryButtonClass } from '../../components/ui'
+import { RecordSection } from '../records/RecordSection'
+import { ALLERGIES, CONDITIONS, CONTACTS, DIETARY } from '../records/resources'
 import { AccessPanel } from './AccessPanel'
 import { DetailsPanel } from './DetailsPanel'
 
 type Tab = { id: string; label: string }
 
-const BASE_TABS: Tab[] = [{ id: 'details', label: 'Details' }]
+const BASE_TABS: Tab[] = [
+  { id: 'details', label: 'Details' },
+  { id: 'history', label: 'Health history' },
+]
+
+const HISTORY_RESOURCES = [CONDITIONS, ALLERGIES, DIETARY, CONTACTS]
 
 type Props = {
   profileId: string
@@ -61,6 +68,15 @@ export function ProfilePage({ profileId, onBack }: Props) {
           {tab === 'details' && (
             <DetailsPanel profile={profile} onSaved={setProfile} onDeleted={onBack} />
           )}
+          {tab === 'history' &&
+            HISTORY_RESOURCES.map((resource) => (
+              <RecordSection
+                key={resource.path}
+                profileId={profile.id}
+                canEdit={profile.accessLevel !== 'VIEW'}
+                resource={resource}
+              />
+            ))}
           {tab === 'access' && <AccessPanel profile={profile} />}
         </>
       )}
