@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+      # Includes integration tests against PostgreSQL 18 through Testcontainers.
+      - run: sh ./mvnw -B -ntp verify
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
+  full-stack:
+    needs: [backend, frontend]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Create throwaway environment file
+        run: |
+          {
+            echo "DB_NAME=family_health"
+            echo "DB_USERNAME=family_health"
+            echo "DB_PASSWORD=$(openssl rand -hex 24)"
+          } > .env
+      - name: Build images and start the stack
+        run: docker compose up --build --detach --wait --wait-timeout 180
+      - name: Page is served through nginx
+        run: curl -fsS http://127.0.0.1:8080/ | grep -q '<div id="root">'
+      - name: Backend and database are reachable through nginx
+        run: curl -fsS http://127.0.0.1:8080/actuator/health | grep -q '"status":"UP"'
+      - name: Other actuator endpoints are not reachable through nginx
+        run: |
+          # The SPA fallback answers unknown paths with index.html, never with actuator data.
+          ! curl -sS http://127.0.0.1:8080/actuator/env | grep -q 'propertySources'
+      - name: Show container status on failure
+        if: failure()
+        run: docker compose ps --all
+      - name: Stop the stack
+        if: always()
+        run: docker compose down --volumes
