@@ -270,13 +270,13 @@ family-health-companion/
 
 ## 9. Implementation Sequence
 
-Tests are written within each phase, and CI runs from Phase 1. Each phase requires approval before it starts. `PROJECT_STATUS.md` tracks progress.
+This list shows the order of work. `PROJECT_STATUS.md` keeps the original phase numbers, where deployment is Phase 3 and runs after Phase 5. Tests are written within each phase, and CI runs from Phase 1. Each phase requires approval before it starts. `PROJECT_STATUS.md` tracks progress.
 
 1. Repository foundation and minimal end-to-end app.
 2. Design baseline documents.
-3. Deploy the skeleton online with HTTPS.
-4. Identity, sessions, and audit log.
-5. Family, profiles, and authorization.
+3. Identity, sessions, and audit log.
+4. Family, profiles, and authorization.
+5. Deploy online with HTTPS.
 6. Conditions, allergies, restrictions, emergency contacts, and record provenance.
 7. Visits, symptoms, and first timeline.
 8. Medication, adherence, and reminders.
