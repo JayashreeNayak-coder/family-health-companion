@@ -187,15 +187,17 @@ The stored file is never altered by the system. Each health record table's `sour
 A document attached to a record as evidence, separate from provenance: a record has at most one source document but may have several attachments. `record_id` points into the table named by `record_type`, so it can't be a foreign key. The service checks that the record exists in the same profile, and deletes a record's attachments when it deletes the record (`DECISIONS.md`, D-020).
 
 ### `extraction_job` (owned through `document`)
-`document_id`, `status`, `attempts`, `provider`, `model`, `prompt_version`, `error_code`, `started_at`, `finished_at`.
+`document_id`, `requested_by`, `status` (`QUEUED`, `PROCESSING`, `SUCCEEDED`, `FAILED`), `attempts`, `provider`, `model`, `prompt_version`, `error_code`, `started_at`, `finished_at`.
 
-The job table doubles as a simple database-backed queue. No message broker is needed for the prototype.
+The job table doubles as a simple database-backed queue. The worker claims the oldest queued job with `FOR UPDATE SKIP LOCKED`, and calls the provider outside any transaction. No message broker is needed for the prototype.
 
 ### `extraction_draft` (owned through `document`)
-`document_id`, `job_id`, `schema_version`, `status` (`PENDING_REVIEW`, `COMPLETED`, `REJECTED`), `reviewed_by`, `reviewed_at`.
+`document_id`, `job_id`, `schema_version`, `status` (`PENDING_REVIEW`, `COMPLETED`, `REJECTED`), `reviewed_by`, `reviewed_at`. At most one draft per document is `PENDING_REVIEW` (partial unique index).
 
 ### `extraction_draft_item` (owned through `extraction_draft`)
-`draft_id`, `item_type` (`MEDICATION`, `LAB_RESULT`, `CONDITION`, `ALLERGY`, `DOCTOR_VISIT`), `payload jsonb`, `status` (`PENDING`, `APPROVED`, `REJECTED`), `confirmed_record_id`.
+`draft_id`, `position`, `item_type` (`MEDICATION`, `LAB_RESULT`, `CONDITION`, `ALLERGY`, `VISIT`), `payload jsonb`, `status` (`PENDING`, `APPROVED`, `REJECTED`), `confirmed_record_id` (set exactly when approved), `decided_by`, `decided_at`.
+
+`payload` holds the record type's own API request fields, so approval runs the same validation as manual entry. An approved record is `DOCUMENTED`, names the document as its source, has `extraction_draft_item_id` set (a foreign key that becomes NULL if the document and its drafts are deleted), and has the document attached.
 
 Per-item status allows partial approval. Draft data stays out of the confirmed record tables until the user approves it, so a query on those tables can never return unapproved AI output.
 

@@ -9,6 +9,8 @@ import {
 } from '../../api/documents'
 import { Card, dangerButtonClass, ErrorNote, Missing, secondaryButtonClass } from '../../components/ui'
 import { DocumentView } from './DocumentView'
+import { DraftReview } from './DraftReview'
+import { ExtractionControls } from './ExtractionControls'
 import { UploadForm } from './UploadForm'
 
 type Props = { profileId: string; canEdit: boolean; canManage: boolean }
@@ -18,6 +20,19 @@ export function DocumentsPanel({ profileId, canEdit, canManage }: Props) {
   const [error, setError] = useState<string | null>(null)
   const [revision, setRevision] = useState(0)
   const [uploading, setUploading] = useState(false)
+  const [reviewing, setReviewing] = useState<string | null>(null)
+  const inProgress = documents?.some((document) =>
+    ['QUEUED', 'PROCESSING'].includes(document.extractionStatus),
+  )
+
+  // While the AI is reading a document, check again every few seconds.
+  useEffect(() => {
+    if (!inProgress) {
+      return
+    }
+    const timer = window.setTimeout(() => setRevision((current) => current + 1), 3000)
+    return () => window.clearTimeout(timer)
+  }, [inProgress, documents])
 
   useEffect(() => {
     let ignore = false
@@ -65,6 +80,8 @@ export function DocumentsPanel({ profileId, canEdit, canManage }: Props) {
       <p className="mb-3 text-sm text-slate-600">
         Prescriptions, lab reports, scans, bills, and photos, kept as evidence. Files are private to
         the people with access to this profile. Scans and X-rays are stored, never interpreted.
+        &ldquo;Read with AI&rdquo; sends the file to an outside AI service to draft records for you to
+        check: use synthetic documents only.
       </p>
       <ErrorNote message={error} />
       {!documents && !error && <p role="status">Loading…</p>}
@@ -87,6 +104,14 @@ export function DocumentsPanel({ profileId, canEdit, canManage }: Props) {
               </p>
               <div className="mt-2 flex flex-wrap gap-2">
                 <DocumentView profileId={profileId} document={document} />
+                {canEdit && (
+                  <ExtractionControls
+                    profileId={profileId}
+                    document={document}
+                    onRequested={() => setRevision((current) => current + 1)}
+                    onReview={() => setReviewing(document.id)}
+                  />
+                )}
                 {canManage && (
                   <button
                     type="button"
@@ -98,6 +123,16 @@ export function DocumentsPanel({ profileId, canEdit, canManage }: Props) {
                   </button>
                 )}
               </div>
+              {reviewing === document.id && (
+                <DraftReview
+                  profileId={profileId}
+                  document={document}
+                  onClose={() => {
+                    setReviewing(null)
+                    setRevision((current) => current + 1)
+                  }}
+                />
+              )}
             </li>
           ))}
         </ul>

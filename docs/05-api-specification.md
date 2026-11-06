@@ -170,13 +170,17 @@ A `sourceDocumentId` must name a document in the same profile, or the request re
 | GET | `/profiles/{id}/documents` | List metadata | `VIEW` |
 | GET | `/profiles/{id}/documents/{docId}/content` | Stream the original through the backend | `VIEW` |
 | DELETE | `/profiles/{id}/documents/{docId}` | Explicit delete | `MANAGE` |
-| POST | `/profiles/{id}/documents/{docId}/extraction` | Queue extraction (202) | `EDIT` |
-| GET | `/profiles/{id}/documents/{docId}/draft` | Read draft for review | `EDIT` |
-| PATCH | `/profiles/{id}/documents/{docId}/draft/items/{itemId}` | Correct an item | `EDIT` |
-| POST | `/profiles/{id}/documents/{docId}/draft/items/{itemId}/approve` | Create a confirmed record | `EDIT` |
-| POST | `/profiles/{id}/documents/{docId}/draft/items/{itemId}/reject` | Reject an item | `EDIT` |
+| POST | `/profiles/{id}/documents/{docId}/extraction` | Queue extraction (202). 503 `AI_UNAVAILABLE`, 409 `EXTRACTION_IN_PROGRESS` or `DRAFT_PENDING_REVIEW`, 429 `AI_LIMIT_REACHED`. | `EDIT` |
+| GET | `/profiles/{id}/documents/{docId}/extraction` | The latest job's status and error code | `VIEW` |
+| GET | `/profiles/{id}/documents/{docId}/draft` | The latest draft, labelled `AI_GENERATED`, with a disclaimer and limitations | `EDIT` |
+| PATCH | `/profiles/{id}/documents/{docId}/draft/items/{itemId}` | Correct an item: `{payload, version}` | `EDIT` |
+| POST | `/profiles/{id}/documents/{docId}/draft/items/{itemId}/approve` | `{payload?, version}`. Creates the confirmed record with the record's own validation (400 `VALIDATION_FAILED` with field errors). | `EDIT` |
+| POST | `/profiles/{id}/documents/{docId}/draft/items/{itemId}/reject` | `{version}`. Rejects an item and creates nothing. | `EDIT` |
+| POST | `/profiles/{id}/documents/{docId}/draft/reject` | Rejects every item still pending | `EDIT` |
 
-Upload fields are `file`, `category` (`PRESCRIPTION`, `LAB_REPORT`, `SCAN`, `BILL`, `PHOTO`, `OTHER`, default `OTHER`), `documentOn`, and `description`. The type comes from the file's content: anything other than PDF, JPEG, or PNG returns 415 (`UNSUPPORTED_FILE_TYPE`), an empty file 400 (`FILE_REQUIRED`), and one over 10 MB 413 (`FILE_TOO_LARGE`). `GET /profiles/{id}/documents/{docId}` returns metadata only. Responses never include the storage key or hash. The extraction and draft endpoints arrive in Phase 12.
+A payload may only hold the item type's fields. An item already decided returns 409 `ITEM_ALREADY_DECIDED`, and a reviewed draft 409 `DRAFT_NOT_PENDING`. A failed job's `errorCode` is one of `UNREADABLE`, `NOTHING_FOUND`, `TIMEOUT`, `UNAVAILABLE`, `RATE_LIMITED`, `BLOCKED`, `MALFORMED_RESPONSE`, `NOT_CONFIGURED`, `INTERRUPTED`, or `INTERNAL_ERROR`. The original is kept whatever happens.
+
+Upload fields are `file`, `category` (`PRESCRIPTION`, `LAB_REPORT`, `SCAN`, `BILL`, `PHOTO`, `OTHER`, default `OTHER`), `documentOn`, and `description`. The type comes from the file's content: anything other than PDF, JPEG, or PNG returns 415 (`UNSUPPORTED_FILE_TYPE`), an empty file 400 (`FILE_REQUIRED`), and one over 10 MB 413 (`FILE_TOO_LARGE`). `GET /profiles/{id}/documents/{docId}` returns metadata only. Responses never include the storage key or hash.
 
 ### Attachments
 

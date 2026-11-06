@@ -19,6 +19,7 @@ import java.util.Collection;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -157,6 +158,31 @@ class DocumentService implements DocumentLookup, ProfileFiles {
 			.stream()
 			.map(DocumentSummary::from)
 			.collect(Collectors.toMap(DocumentSummary::id, Function.identity()));
+	}
+
+	@Override
+	public Optional<DocumentSummary> find(UUID profileId, UUID documentId) {
+		return documents.findByIdAndProfileId(documentId, profileId).map(DocumentSummary::from);
+	}
+
+	@Override
+	public Optional<StoredFile> readContent(UUID documentId) {
+		Optional<Document> document = documents.findById(documentId);
+		if (document.isEmpty()) {
+			return Optional.empty();
+		}
+		try (InputStream input = storage.open(document.get().storageKey())) {
+			return Optional.of(new StoredFile(input.readAllBytes(), document.get().contentType()));
+		}
+		catch (IOException ex) {
+			throw new UncheckedIOException("A stored file can't be read", ex);
+		}
+	}
+
+	@Override
+	@Transactional
+	public void setExtractionStatus(UUID documentId, ExtractionStatus status) {
+		documents.findById(documentId).ifPresent(document -> document.extractionStatus(status));
 	}
 
 	@Override

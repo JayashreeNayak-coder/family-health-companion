@@ -68,6 +68,10 @@ class Document extends BaseEntity {
 		this.description = description;
 	}
 
+	void extractionStatus(ExtractionStatus status) {
+		this.extractionStatus = status;
+	}
+
 	UUID profileId() {
 		return profileId;
 	}

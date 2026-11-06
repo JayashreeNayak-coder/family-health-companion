@@ -36,6 +36,23 @@ server:
         secure: ${SESSION_COOKIE_SECURE:true}
 
 app:
+  ai:
+    # Calls must finish in this time. Retries are bounded by worker.max-attempts.
+    timeout: 90s
+    gemini:
+      # From the environment only. Without a key, AI features report unavailable and manual entry still works.
+      api-key: ${GEMINI_API_KEY:}
+      model: ${GEMINI_MODEL:gemini-flash-latest}
+      base-url: ${GEMINI_BASE_URL:https://generativelanguage.googleapis.com}
+    limits:
+      # Over a rolling day. Protects a free or small budget.
+      per-account-per-day: ${AI_LIMIT_PER_ACCOUNT_PER_DAY:20}
+      global-per-day: ${AI_LIMIT_GLOBAL_PER_DAY:200}
+    worker:
+      enabled: true
+      poll-interval: 3s
+      max-attempts: 2
+      stale-after: 5m
   documents:
     # Private folder for uploaded originals, outside anything the web server serves. Required.
     storage-dir: ${DOCUMENT_STORAGE_DIR:}

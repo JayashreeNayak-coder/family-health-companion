@@ -75,6 +75,13 @@ public final class ApiClient {
 			.header("X-CSRF-TOKEN", csrfToken()));
 	}
 
+	public MockHttpServletResponse patch(String path, Map<String, ?> body) throws Exception {
+		return send(MockMvcRequestBuilders.patch(path)
+			.contentType(MediaType.APPLICATION_JSON)
+			.content(JSON.writeValueAsString(body))
+			.header("X-CSRF-TOKEN", csrfToken()));
+	}
+
 	public MockHttpServletResponse delete(String path) throws Exception {
 		return send(MockMvcRequestBuilders.delete(path).header("X-CSRF-TOKEN", csrfToken()));
 	}

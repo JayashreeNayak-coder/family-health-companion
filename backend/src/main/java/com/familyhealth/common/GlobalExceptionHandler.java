@@ -47,6 +47,16 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 	}
 
 	/** Two writes raced, and the database or the version column stopped the second. */
+	@ExceptionHandler(FieldValidationException.class)
+	ResponseEntity<ProblemDetail> handleFieldValidation(FieldValidationException ex) {
+		ProblemDetail body = problem(HttpStatus.BAD_REQUEST, "VALIDATION_FAILED", "Validation failed");
+		body.setProperty("errors", ex.errors()
+			.stream()
+			.map(error -> Map.of("field", error.field(), "message", error.message()))
+			.toList());
+		return ResponseEntity.badRequest().body(body);
+	}
+
 	@ExceptionHandler({ ObjectOptimisticLockingFailureException.class, DataIntegrityViolationException.class })
 	ResponseEntity<ProblemDetail> handleConflict(Exception ex) {
 		// The class name only: these messages can quote the submitted values.

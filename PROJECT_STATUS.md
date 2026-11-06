@@ -2,8 +2,8 @@
 ## Project Status
 
 **Last updated:** 2026-11-06
-**Current phase:** Phases 5 to 11 complete. Phase 3 (deployment) is waiting on the owner. Phase 12 (AI) is next and needs the owner's API key and budget.
-**Application code:** Accounts, families, profiles and access grants, conditions, allergies, dietary items, emergency contacts, visits, symptoms, medications with schedules and adherence, lab results with trends, food log, document upload with attachments on records, and the timeline. No AI.
+**Current phase:** Phases 5 to 12 complete. Phase 12 is tested with a fake provider only, until the owner's Gemini key is set. Phase 3 (deployment) is waiting on the owner.
+**Application code:** Accounts, families, profiles and access grants, conditions, allergies, dietary items, emergency contacts, visits, symptoms, medications with schedules and adherence, lab results with trends, food log, document upload with attachments on records, AI reading of documents as a reviewed draft (Gemini), and the timeline.
 
 ## Environment
 
@@ -41,7 +41,7 @@
 | 9 | Lab results and trends | Done |
 | 10 | Food log | Done |
 | 11 | Document upload and private storage, with attachments on records | Done |
-| 12 | AI layer, then extraction with review and approval | Not started |
+| 12 | AI layer, then extraction with review and approval | Done. Real Gemini calls not yet tried: no key set. |
 | 13 | Voice transcription | Not started |
 | 14 | General meal assistant | Not started |
 | 15 | Health-aware meal assistant | Not started |
@@ -54,13 +54,15 @@
 
 | Suite | Result | Where |
 |---|---|---|
-| Backend unit tests (9) and integration tests (179) | Pass | Local (temporary PostgreSQL 18). CI: see the Git note below. |
-| Frontend tests (55), lint, type check, build | Pass | Local. CI: see the Git note below. |
+| Backend unit tests (17) and integration tests (188) | Pass | Local (temporary PostgreSQL 18). CI: see the Git note below. |
+| Frontend tests (61), lint, type check, build | Pass | Local. CI: see the Git note below. |
 | Full flow from registration to linking and deleting a profile, through the Vite dev proxy against the real backend | Pass, with `curl` (Phase 8) | Local |
 | Lab trend, food log, upload, download, rejected HTML, 12 MB upload, attachment, and document deletion against the real backend | Pass, with `curl` | Local |
+| Gemini client against a local stand-in server: request shape, key header, timeouts, and error codes | Pass | Local (unit) |
+| A real Gemini call | Not run: no key yet | Owner's machine |
 | Docker image builds, and the auth flow through nginx | Last passed at Phase 4. Only CI can check this. | CI only |
 
-**Git note:** The owner pushed Phases 5 to 8, but no CI run was seen; the owner is checking that Actions is enabled. Phases 9 to 11 are uncommitted until the owner asks.
+**Git note:** Phases 9 to 12 are local commits. The owner pushes; no CI run has been seen yet, and the owner is checking that Actions is enabled.
 
 ## Known issues
 
@@ -81,14 +83,19 @@
 - An upload attached from a record, where the attach step then fails, stays in Documents unattached.
 - Lab trends are shown for one test and unit at a time. Units are never converted.
 - Docker image changes for document storage are verified only by CI.
+- On Gemini's free tier, Google may use uploaded documents to improve its products and people may read them. Synthetic documents only (`DECISIONS.md`, D-021).
+- AI reading has only been tested with a fake provider. Prompt quality and the injected-instruction check (`docs/07`) need a real run once the key is set.
+- The AI never fills a condition's status, a medication's status, or a visit's time. The user adds them after approval.
+- An approved draft item can't be undone from the draft. Edit or delete the record instead.
 
 ## Next step
 
-1. **Owner:** restart the backend (the running one has old code), try lab results, food log, documents, and attachments, and report anything wrong.
-2. **Owner:** review `DECISIONS.md`, D-019 and D-020, and confirm CI runs on GitHub.
-3. **Phase 12: AI extraction with review.** Needs the owner's Claude API key, set as `ANTHROPIC_API_KEY` on the machine and never in Git or chat, and a monthly spend limit.
+1. **Owner:** push, and confirm CI runs on GitHub.
+2. **Owner:** set `GEMINI_API_KEY` (`README.md`), restart the backend, and try **Read with AI** on a synthetic prescription or lab report.
+3. **Owner:** review `DECISIONS.md`, D-019 to D-021.
+4. **Phase 13: voice transcription**, then Phases 14 to 16, all on the same provider.
 
 Decisions the owner must make later:
 
 - **Phase 3:** hosting budget, domain, and hosting account. Close the `/auth/register` rate limit first.
-- **Phase 12:** the AI provider, an API key, and a usage budget (`docs/06` section 8.6).
+- **Before real health data:** a paid AI tier or another provider (`DECISIONS.md`, D-021).

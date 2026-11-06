@@ -10,11 +10,13 @@ import org.springframework.context.annotation.Import;
 		"spring.datasource.url=${TEST_DB_URL:}",
 		"spring.datasource.username=${TEST_DB_USERNAME:}",
 		"spring.datasource.password=${TEST_DB_PASSWORD:}",
-		"app.documents.storage-dir=${java.io.tmpdir}/family-health-test-documents"
+		"app.documents.storage-dir=${java.io.tmpdir}/family-health-test-documents",
+		"app.ai.worker.enabled=false",
+		"app.ai.gemini.api-key="
 })
 // No request dumps: they would print test passwords, and hide real log output from the logging test.
 @AutoConfigureMockMvc(print = MockMvcPrint.NONE)
-@Import(TestDatabaseConfig.class)
+@Import({ TestDatabaseConfig.class, FakeAiConfig.class })
 public abstract class IntegrationTestBase {
 
 }

@@ -2,7 +2,7 @@
 
 A web application that helps individuals and families organize health records. It is a record-management and support tool. It does not diagnose, prescribe, or replace healthcare professionals.
 
-**Status:** early prototype. Accounts, families, profiles with access control, health history, visits, symptoms, medications with in-app reminders, lab results with trends, a food log, private document upload with photos and files attached to records, and the timeline work. AI features don't exist yet. See [PROJECT_STATUS.md](PROJECT_STATUS.md).
+**Status:** early prototype. Accounts, families, profiles with access control, health history, visits, symptoms, medications with in-app reminders, lab results with trends, a food log, private document upload with photos and files attached to records, and the timeline work. AI reading of uploaded documents works with a Gemini key, as a draft you review and approve item by item. Other AI features don't exist yet. See [PROJECT_STATUS.md](PROJECT_STATUS.md).
 
 **Use synthetic data only.** Do not enter real health information.
 
@@ -34,6 +34,15 @@ $env:DB_PASSWORD = 'your-dev-password'
 ```
 
 The backend runs at `http://localhost:8081`, and Flyway applies migrations at startup. Uploaded files go to `backend\data\documents`, which Git ignores. Set `DOCUMENT_STORAGE_DIR` to use another folder.
+
+### Optional: AI reading of documents
+
+AI reading uses Google Gemini. Without a key, the app works normally and the **Read with AI** button reports that AI isn't available.
+
+1. Create a key in Google AI Studio.
+2. In PowerShell, run `setx GEMINI_API_KEY "your-key"`, then open a **new** terminal before starting the backend. Never put the key in a file in this repository or paste it into a chat.
+
+On Gemini's free tier, Google may use what you send to improve its products, and people may read it. Upload synthetic documents only.
 
 ### 3. Start the frontend
 

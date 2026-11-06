@@ -1,0 +1,35 @@
+{
+  "type": "OBJECT",
+  "properties": {
+    "readable": { "type": "BOOLEAN" },
+    "items": {
+      "type": "ARRAY",
+      "items": {
+        "type": "OBJECT",
+        "properties": {
+          "type": { "type": "STRING", "enum": ["MEDICATION", "LAB_RESULT", "CONDITION", "ALLERGY", "VISIT"] },
+          "name": { "type": "STRING" },
+          "dosage": { "type": "STRING", "nullable": true },
+          "instructions": { "type": "STRING", "nullable": true },
+          "prescribedBy": { "type": "STRING", "nullable": true },
+          "startOn": { "type": "STRING", "nullable": true },
+          "endOn": { "type": "STRING", "nullable": true },
+          "valueNumeric": { "type": "NUMBER", "nullable": true },
+          "valueText": { "type": "STRING", "nullable": true },
+          "unit": { "type": "STRING", "nullable": true },
+          "resultOn": { "type": "STRING", "nullable": true },
+          "referenceRange": { "type": "STRING", "nullable": true },
+          "reaction": { "type": "STRING", "nullable": true },
+          "severity": { "type": "STRING", "nullable": true },
+          "onsetOn": { "type": "STRING", "nullable": true },
+          "visitOn": { "type": "STRING", "nullable": true },
+          "doctorName": { "type": "STRING", "nullable": true },
+          "facility": { "type": "STRING", "nullable": true },
+          "notes": { "type": "STRING", "nullable": true }
+        },
+        "required": ["type", "name"]
+      }
+    }
+  },
+  "required": ["readable", "items"]
+}

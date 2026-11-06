@@ -150,6 +150,8 @@ The check can therefore only ever flag a conflict. **A recipe with no flag must 
 - Usage limits apply per account and feature, and a global daily limit protects the budget.
 - Provider unavailability returns 503, while all manual workflows keep working.
 - **Provider selection criteria (Phase 12):** no training on submitted data, a clear retention policy, structured output, and document and audio support at an acceptable cost.
+- **Chosen provider:** Google Gemini, called over HTTP with the key in a header, from `ai.AiConfig` only. The owner plans to use the free tier, which does **not** meet the first criterion: Google may use free-tier inputs and outputs to improve its products, and human reviewers may read them. The free tier is therefore acceptable only with synthetic demo documents, and the UI says so. Real health data needs the paid tier or another provider first (`DECISIONS.md`, D-021).
+- **Limits:** 20 extraction requests per account and 200 overall in any 24 hours by default (`AI_LIMIT_PER_ACCOUNT_PER_DAY`, `AI_LIMIT_GLOBAL_PER_DAY`). A job is tried at most twice, and only after a timeout or provider outage.
 
 ## 9. Demo environment
 

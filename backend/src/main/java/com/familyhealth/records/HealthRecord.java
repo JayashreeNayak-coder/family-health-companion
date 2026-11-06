@@ -37,6 +37,15 @@ public abstract class HealthRecord extends ProfileRecord {
 		this.createdBy = provenance.createdBy();
 	}
 
+	/** Marks a record confirmed from an AI draft item. Set once, when the record is created. */
+	void linkDraftItem(UUID draftItemId) {
+		this.extractionDraftItemId = draftItemId;
+	}
+
+	public UUID extractionDraftItemId() {
+		return extractionDraftItemId;
+	}
+
 	public SourceType sourceType() {
 		return sourceType;
 	}
