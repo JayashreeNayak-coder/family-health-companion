@@ -67,7 +67,7 @@ class GeminiClientTest {
 
 	private GeminiDocumentExtractor extractor(String key, Duration timeout) {
 		GeminiClient client = new GeminiClient(JSON, "http://127.0.0.1:" + server.getAddress().getPort(), key, timeout);
-		return new GeminiDocumentExtractor(client, "test-model", new ExtractionResponseParser(JSON),
+		return new GeminiDocumentExtractor(client, "test-model", null, new ExtractionResponseParser(JSON),
 				new PromptResources(JSON));
 	}
 
@@ -123,6 +123,30 @@ class GeminiClientTest {
 		assertFailure(200, "{\"promptFeedback\": {\"blockReason\": \"SAFETY\"}}", Code.BLOCKED);
 		assertFailure(200, answer("{}").replace("STOP", "MAX_TOKENS"), Code.MALFORMED_RESPONSE);
 		assertFailure(200, answer("{\"readable\": true, \"items\": [], \"diagnosis\": \"x\"}"), Code.MALFORMED_RESPONSE);
+	}
+
+	@Test
+	void anOverloadedModelFallsBackOnce() throws IOException {
+		server.removeContext("/");
+		server.createContext("/", exchange -> {
+			String path = exchange.getRequestURI().getPath();
+			requestPath.set(path);
+			exchange.getRequestBody().readAllBytes();
+			boolean main = path.contains("/main-model:");
+			byte[] bytes = (main ? "{}"
+					: answer("{\"readable\": true, \"items\": [{\"type\": \"CONDITION\", \"name\": \"Synthetic\"}]}"))
+				.getBytes(StandardCharsets.UTF_8);
+			exchange.sendResponseHeaders(main ? 503 : 200, bytes.length);
+			exchange.getResponseBody().write(bytes);
+			exchange.close();
+		});
+		GeminiClient client = new GeminiClient(JSON, "http://127.0.0.1:" + server.getAddress().getPort(), "k",
+				Duration.ofSeconds(5));
+		GeminiDocumentExtractor extractor = new GeminiDocumentExtractor(client, "main-model", "spare-model",
+				new ExtractionResponseParser(JSON), new PromptResources(JSON));
+
+		assertThat(extractor.extract(new byte[] { 1 }, "image/png").items()).hasSize(1);
+		assertThat(requestPath.get()).contains("/spare-model:");
 	}
 
 	@Test

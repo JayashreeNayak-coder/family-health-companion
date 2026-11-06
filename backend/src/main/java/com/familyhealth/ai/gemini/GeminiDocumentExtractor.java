@@ -1,5 +1,6 @@
 package com.familyhealth.ai.gemini;
 
+import com.familyhealth.ai.AiException;
 import com.familyhealth.ai.DocumentExtractor;
 import com.familyhealth.ai.ExtractionResponseParser;
 import com.familyhealth.ai.PromptResources;
@@ -14,16 +15,19 @@ public class GeminiDocumentExtractor implements DocumentExtractor {
 
 	private final String model;
 
+	private final String fallbackModel;
+
 	private final ExtractionResponseParser parser;
 
 	private final String prompt;
 
 	private final JsonNode schema;
 
-	public GeminiDocumentExtractor(GeminiClient client, String model, ExtractionResponseParser parser,
-			PromptResources prompts) {
+	public GeminiDocumentExtractor(GeminiClient client, String model, String fallbackModel,
+			ExtractionResponseParser parser, PromptResources prompts) {
 		this.client = client;
 		this.model = model;
+		this.fallbackModel = fallbackModel == null || fallbackModel.isBlank() ? null : fallbackModel;
 		this.parser = parser;
 		this.prompt = prompts.text("ai/extraction/" + ExtractionResponseParser.VERSION + "/prompt.txt");
 		this.schema = prompts.json("ai/extraction/" + ExtractionResponseParser.VERSION + "/schema.json");
@@ -49,12 +53,22 @@ public class GeminiDocumentExtractor implements DocumentExtractor {
 		return "extraction-" + ExtractionResponseParser.VERSION;
 	}
 
+	/** Tries the fallback model once when the main one reports high demand. */
 	@Override
 	public Result extract(byte[] content, String contentType) {
-		GeminiClient.Output output = client.generate(model, prompt,
-				List.of(new GeminiClient.InlineData(contentType, Base64.getEncoder().encodeToString(content)),
-						new GeminiClient.Text("Copy the items stated in the attached document into the JSON structure.")),
-				schema);
+		List<GeminiClient.Part> parts = List.of(
+				new GeminiClient.InlineData(contentType, Base64.getEncoder().encodeToString(content)),
+				new GeminiClient.Text("Copy the items stated in the attached document into the JSON structure."));
+		GeminiClient.Output output;
+		try {
+			output = client.generate(model, prompt, parts, schema);
+		}
+		catch (AiException ex) {
+			if (ex.code() != AiException.Code.UNAVAILABLE || fallbackModel == null) {
+				throw ex;
+			}
+			output = client.generate(fallbackModel, prompt, parts, schema);
+		}
 		return parser.parse(output.text(), output.inputTokens(), output.outputTokens());
 	}
 

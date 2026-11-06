@@ -42,7 +42,9 @@ app:
     gemini:
       # From the environment only. Without a key, AI features report unavailable and manual entry still works.
       api-key: ${GEMINI_API_KEY:}
-      model: ${GEMINI_MODEL:gemini-flash-latest}
+      model: ${GEMINI_MODEL:gemini-3.5-flash}
+      # Used when the main model reports high demand (503), which happens often on the free tier.
+      fallback-model: ${GEMINI_FALLBACK_MODEL:gemini-flash-lite-latest}
       base-url: ${GEMINI_BASE_URL:https://generativelanguage.googleapis.com}
     limits:
       # Over a rolling day. Protects a free or small budget.

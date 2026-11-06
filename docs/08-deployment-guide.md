@@ -127,7 +127,8 @@ The recommended starting point is one small VPS running Docker Compose, with a l
 | `STORAGE_ENDPOINT`, `STORAGE_BUCKET` | Object storage, once hosting is chosen in Phase 3 | No |
 | `STORAGE_ACCESS_KEY`, `STORAGE_SECRET_KEY` | Object storage, once hosting is chosen in Phase 3 | Yes |
 | `GEMINI_API_KEY` | AI provider key. Without it, AI features report unavailable and everything else works. | Yes |
-| `GEMINI_MODEL` | Gemini model, default `gemini-flash-latest` | No |
+| `GEMINI_MODEL` | Gemini model, default `gemini-3.5-flash` | No |
+| `GEMINI_FALLBACK_MODEL` | Tried once when the main model reports high demand, default `gemini-flash-lite-latest`. Empty turns it off. | No |
 | `AI_LIMIT_PER_ACCOUNT_PER_DAY`, `AI_LIMIT_GLOBAL_PER_DAY` | AI request limits over a rolling day, default 20 and 200 | No |
 | `AI_PROVIDER_API_KEY` | AI provider (Phase 12) | Yes |
 | `AI_DAILY_BUDGET_LIMIT` | Usage limit (Phase 12) | No |

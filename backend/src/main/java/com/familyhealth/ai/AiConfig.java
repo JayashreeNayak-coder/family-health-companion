@@ -28,8 +28,9 @@ class AiConfig {
 
 	@Bean
 	DocumentExtractor documentExtractor(GeminiClient client, @Value("${app.ai.gemini.model}") String model,
-			ExtractionResponseParser parser, PromptResources prompts) {
-		return new GeminiDocumentExtractor(client, model, parser, prompts);
+			@Value("${app.ai.gemini.fallback-model:}") String fallbackModel, ExtractionResponseParser parser,
+			PromptResources prompts) {
+		return new GeminiDocumentExtractor(client, model, fallbackModel, parser, prompts);
 	}
 
 }

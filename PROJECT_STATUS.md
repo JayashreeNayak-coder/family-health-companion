@@ -2,7 +2,7 @@
 ## Project Status
 
 **Last updated:** 2026-11-06
-**Current phase:** Phases 5 to 12 complete. Phase 12 is tested with a fake provider only, until the owner's Gemini key is set. Phase 3 (deployment) is waiting on the owner.
+**Current phase:** Phases 5 to 12 complete, including a real Gemini run. Phase 3 (deployment) is waiting on the owner.
 **Application code:** Accounts, families, profiles and access grants, conditions, allergies, dietary items, emergency contacts, visits, symptoms, medications with schedules and adherence, lab results with trends, food log, document upload with attachments on records, AI reading of documents as a reviewed draft (Gemini), and the timeline.
 
 ## Environment
@@ -41,7 +41,7 @@
 | 9 | Lab results and trends | Done |
 | 10 | Food log | Done |
 | 11 | Document upload and private storage, with attachments on records | Done |
-| 12 | AI layer, then extraction with review and approval | Done. Real Gemini calls not yet tried: no key set. |
+| 12 | AI layer, then extraction with review and approval | Done |
 | 13 | Voice transcription | Not started |
 | 14 | General meal assistant | Not started |
 | 15 | Health-aware meal assistant | Not started |
@@ -59,7 +59,7 @@
 | Full flow from registration to linking and deleting a profile, through the Vite dev proxy against the real backend | Pass, with `curl` (Phase 8) | Local |
 | Lab trend, food log, upload, download, rejected HTML, 12 MB upload, attachment, and document deletion against the real backend | Pass, with `curl` | Local |
 | Gemini client against a local stand-in server: request shape, key header, timeouts, and error codes | Pass | Local (unit) |
-| A real Gemini call | Not run: no key yet | Owner's machine |
+| A real Gemini extraction of a synthetic prescription PDF, approval of one item, and an injected instruction that was ignored | Pass (`gemini-3.5-flash`) | Local, owner's key |
 | Docker image builds, and the auth flow through nginx | Last passed at Phase 4. Only CI can check this. | CI only |
 
 **Git note:** Phases 9 to 12 are local commits. The owner pushes; no CI run has been seen yet, and the owner is checking that Actions is enabled.
@@ -84,14 +84,14 @@
 - Lab trends are shown for one test and unit at a time. Units are never converted.
 - Docker image changes for document storage are verified only by CI.
 - On Gemini's free tier, Google may use uploaded documents to improve its products and people may read them. Synthetic documents only (`DECISIONS.md`, D-021).
-- AI reading has only been tested with a fake provider. Prompt quality and the injected-instruction check (`docs/07`) need a real run once the key is set.
+- AI reading was tried once on a real model with one synthetic PDF. `gemini-flash-latest` was returning 503 (high demand), so the default is `gemini-3.5-flash` with `gemini-flash-lite-latest` as a fallback. Free-tier availability varies.
 - The AI never fills a condition's status, a medication's status, or a visit's time. The user adds them after approval.
 - An approved draft item can't be undone from the draft. Edit or delete the record instead.
 
 ## Next step
 
 1. **Owner:** push, and confirm CI runs on GitHub.
-2. **Owner:** set `GEMINI_API_KEY` (`README.md`), restart the backend, and try **Read with AI** on a synthetic prescription or lab report.
+2. **Owner:** start the backend from PowerShell as in `README.md`, and try **Read with AI** on a synthetic prescription or lab report.
 3. **Owner:** review `DECISIONS.md`, D-019 to D-021.
 4. **Phase 13: voice transcription**, then Phases 14 to 16, all on the same provider.
 

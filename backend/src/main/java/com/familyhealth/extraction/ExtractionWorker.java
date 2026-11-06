@@ -119,7 +119,8 @@ class ExtractionWorker {
 		}
 		catch (AiException ex) {
 			usage.recordCall(job.requestedBy(), ExtractionService.FEATURE, null, null, ex.code().name());
-			log.warn("Extraction job {} failed with {}", jobId, ex.code());
+			// The message holds only a status or reason, never document or response content.
+			log.warn("Extraction job {} failed with {}: {}", jobId, ex.code(), ex.getMessage());
 			finishFailed(jobId, ex.code().name(), ex.code().retryable());
 			return;
 		}
