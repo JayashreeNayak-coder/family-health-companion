@@ -90,9 +90,9 @@
 
 ## Next step
 
-1. **Owner:** push, and confirm CI runs on GitHub.
+1. **Owner:** confirm CI runs on GitHub (pushed on 2026-11-06).
 2. **Owner:** start the backend from PowerShell as in `README.md`, and try **Read with AI** on a synthetic prescription or lab report.
-3. **Owner:** review `DECISIONS.md`, D-019 to D-021.
+3. **Owner:** review `DECISIONS.md`, D-019 and D-020. D-021 (free tier, synthetic data only) is confirmed.
 4. **Phase 13: voice transcription**, then Phases 14 to 16, all on the same provider.
 
 Decisions the owner must make later:
