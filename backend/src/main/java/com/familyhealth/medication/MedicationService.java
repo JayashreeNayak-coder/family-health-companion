@@ -11,6 +11,7 @@ import com.familyhealth.medication.MedicationDtos.ScheduleResponse;
 import com.familyhealth.profile.AccessLevel;
 import com.familyhealth.profile.ProfileAccess;
 import com.familyhealth.records.RecordService;
+import com.familyhealth.records.RecordType;
 import com.familyhealth.records.timeline.TimelineEntry;
 import com.familyhealth.records.timeline.TimelineSource;
 import com.familyhealth.records.timeline.TimelineType;
@@ -52,6 +53,11 @@ class MedicationService extends RecordService<Medication, Request, Response> imp
 		this.adherence = adherence;
 		this.access = access;
 		this.clock = clock;
+	}
+
+	@Override
+	public RecordType recordType() {
+		return RecordType.MEDICATION;
 	}
 
 	@Override

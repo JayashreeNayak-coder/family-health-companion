@@ -5,6 +5,7 @@ public enum TimelineType {
 	CONDITION,
 	VISIT,
 	SYMPTOM,
-	MEDICATION
+	MEDICATION,
+	LAB_RESULT
 
 }

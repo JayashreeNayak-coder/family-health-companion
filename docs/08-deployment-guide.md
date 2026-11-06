@@ -123,8 +123,9 @@ The recommended starting point is one small VPS running Docker Compose, with a l
 | `DB_URL`, `DB_USERNAME` | Database connection | No |
 | `DB_PASSWORD` | Database password | Yes |
 | `SESSION_COOKIE_SECURE` | Default `true`. Set to `false` only for local plain HTTP. Must stay `true` in demo. | No |
-| `STORAGE_ENDPOINT`, `STORAGE_BUCKET` | Object storage (Phase 11) | No |
-| `STORAGE_ACCESS_KEY`, `STORAGE_SECRET_KEY` | Object storage (Phase 11) | Yes |
+| `DOCUMENT_STORAGE_DIR` | Private folder for uploaded originals, used until object storage is chosen (`DECISIONS.md`, D-020). Required. The Docker image sets it to a volume. | No |
+| `STORAGE_ENDPOINT`, `STORAGE_BUCKET` | Object storage, once hosting is chosen in Phase 3 | No |
+| `STORAGE_ACCESS_KEY`, `STORAGE_SECRET_KEY` | Object storage, once hosting is chosen in Phase 3 | Yes |
 | `AI_PROVIDER_API_KEY` | AI provider (Phase 12) | Yes |
 | `AI_DAILY_BUDGET_LIMIT` | Usage limit (Phase 12) | No |
 

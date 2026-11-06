@@ -65,6 +65,23 @@ async function write<T>(method: string, path: string, body?: unknown): Promise<T
   return response.json() as Promise<T>
 }
 
+/** A multipart upload. The browser sets the multipart Content-Type and boundary itself. */
+export async function apiUpload<T>(path: string, form: FormData): Promise<T> {
+  const csrf = await apiGet<{ headerName: string; token: string }>('/auth/csrf')
+  const response = await send(path, {
+    method: 'POST',
+    headers: { [csrf.headerName]: csrf.token },
+    body: form,
+  })
+  return response.json() as Promise<T>
+}
+
+/** A file streamed through the backend after its access check. */
+export async function apiBlob(path: string): Promise<Blob> {
+  const response = await send(path)
+  return response.blob()
+}
+
 export function apiPost<T>(path: string, body?: unknown): Promise<T> {
   return write<T>('POST', path, body)
 }

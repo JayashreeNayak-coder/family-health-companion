@@ -2,7 +2,7 @@
 
 A web application that helps individuals and families organize health records. It is a record-management and support tool. It does not diagnose, prescribe, or replace healthcare professionals.
 
-**Status:** early prototype. Accounts, families, profiles with access control, health history, visits, symptoms, medications with in-app reminders, and the timeline work. Documents and AI features don't exist yet. See [PROJECT_STATUS.md](PROJECT_STATUS.md).
+**Status:** early prototype. Accounts, families, profiles with access control, health history, visits, symptoms, medications with in-app reminders, lab results with trends, a food log, private document upload with photos and files attached to records, and the timeline work. AI features don't exist yet. See [PROJECT_STATUS.md](PROJECT_STATUS.md).
 
 **Use synthetic data only.** Do not enter real health information.
 
@@ -33,7 +33,7 @@ $env:DB_PASSWORD = 'your-dev-password'
 .\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=dev"
 ```
 
-The backend runs at `http://localhost:8081`, and Flyway applies migrations at startup.
+The backend runs at `http://localhost:8081`, and Flyway applies migrations at startup. Uploaded files go to `backend\data\documents`, which Git ignores. Set `DOCUMENT_STORAGE_DIR` to use another folder.
 
 ### 3. Start the frontend
 

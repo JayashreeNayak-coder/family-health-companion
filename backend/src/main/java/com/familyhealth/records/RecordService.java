@@ -5,6 +5,7 @@ import com.familyhealth.common.PageResponse;
 import com.familyhealth.profile.AccessLevel;
 import com.familyhealth.profile.ProfileAccess;
 import java.util.UUID;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,9 +24,27 @@ public abstract class RecordService<E extends ProfileRecord, Q extends Versioned
 
 	private final ProfileAccess access;
 
+	private RecordSupport support;
+
 	protected RecordService(ProfileRecordRepository<E> repository, ProfileAccess access) {
 		this.repository = repository;
 		this.access = access;
+	}
+
+	/** Set by Spring, so that subclasses' constructors don't each need to pass it on. */
+	@Autowired
+	void setSupport(RecordSupport support) {
+		this.support = support;
+	}
+
+	/** The type documents can be attached as, or null if this record can't have attachments. */
+	public RecordType recordType() {
+		return null;
+	}
+
+	/** For callers that have already checked access to the profile. */
+	public boolean exists(UUID profileId, UUID id) {
+		return repository.findByIdAndProfileId(id, profileId).isPresent();
 	}
 
 	protected abstract E newRecord(UUID profileId, UUID accountId, Q request);
@@ -49,6 +68,9 @@ public abstract class RecordService<E extends ProfileRecord, Q extends Versioned
 	@Transactional
 	public S create(UUID accountId, UUID profileId, Q request) {
 		access.require(accountId, profileId, AccessLevel.EDIT);
+		if (request instanceof HealthRecordRequest health) {
+			support.requireSourceDocument(profileId, health.sourceDocumentId());
+		}
 		return toResponse(repository.saveAndFlush(newRecord(profileId, accountId, request)));
 	}
 
@@ -64,7 +86,11 @@ public abstract class RecordService<E extends ProfileRecord, Q extends Versioned
 	@Transactional
 	public void delete(UUID accountId, UUID profileId, UUID id) {
 		access.require(accountId, profileId, AccessLevel.EDIT);
-		repository.delete(load(profileId, id));
+		E record = load(profileId, id);
+		if (recordType() != null) {
+			support.deleteAttachments(recordType(), id);
+		}
+		repository.delete(record);
 	}
 
 	protected E load(UUID profileId, UUID id) {

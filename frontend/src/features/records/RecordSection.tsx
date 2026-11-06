@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
 import { ApiError, errorMessage, type FieldError } from '../../api/client'
+import { listAttachments, listDocuments, type Attachment, type HealthDocument } from '../../api/documents'
 import {
   createRecord,
   deleteRecord,
@@ -16,6 +17,7 @@ import {
   primaryButtonClass,
   secondaryButtonClass,
 } from '../../components/ui'
+import { Attachments } from '../documents/Attachments'
 import type { FieldConfig, ResourceConfig } from './resources'
 import { SourceLabel } from './SourceLabel'
 
@@ -64,13 +66,19 @@ export function RecordSection({ profileId, canEdit, resource, renderItemExtras }
   const [error, setError] = useState<string | null>(null)
   const [revision, setRevision] = useState(0)
   const [editing, setEditing] = useState<RecordItem | 'new' | null>(null)
+  const [attachments, setAttachments] = useState<Attachment[]>([])
+  const recordType = resource.recordType
 
   useEffect(() => {
     let ignore = false
-    listRecords(profileId, resource.path).then(
-      (page) => {
+    Promise.all([
+      listRecords(profileId, resource.path),
+      recordType ? listAttachments(profileId, recordType) : Promise.resolve([]),
+    ]).then(
+      ([page, attached]) => {
         if (!ignore) {
           setItems(page.items)
+          setAttachments(attached)
         }
       },
       (failure) => {
@@ -82,7 +90,7 @@ export function RecordSection({ profileId, canEdit, resource, renderItemExtras }
     return () => {
       ignore = true
     }
-  }, [profileId, resource.path, revision])
+  }, [profileId, resource.path, recordType, revision])
 
   function reload() {
     setEditing(null)
@@ -145,6 +153,17 @@ export function RecordSection({ profileId, canEdit, resource, renderItemExtras }
                     )
                   })}
               </dl>
+              {recordType && (
+                <Attachments
+                  profileId={profileId}
+                  recordType={recordType}
+                  recordId={item.id}
+                  recordTitle={titleOf(resource, item)}
+                  attachments={attachments.filter((attachment) => attachment.recordId === item.id)}
+                  canEdit={canEdit}
+                  onChanged={() => setRevision((current) => current + 1)}
+                />
+              )}
               {renderItemExtras?.(item)}
               {canEdit && (
                 <div className="mt-2 flex gap-2">
@@ -206,6 +225,29 @@ function RecordForm({
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [fieldErrors, setFieldErrors] = useState<FieldError[]>([])
+  const [sourceDocumentId, setSourceDocumentId] = useState('')
+  const [documents, setDocuments] = useState<HealthDocument[]>([])
+  // Provenance is set when a record is created, and can't change afterwards.
+  const offersSource = resource.hasProvenance && item === null
+
+  useEffect(() => {
+    if (!offersSource) {
+      return
+    }
+    let ignore = false
+    // Without the list, the record is simply user reported, so a failure here needs no message.
+    listDocuments(profileId).then(
+      (page) => {
+        if (!ignore) {
+          setDocuments(page.items)
+        }
+      },
+      () => {},
+    )
+    return () => {
+      ignore = true
+    }
+  }, [profileId, offersSource])
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
@@ -214,8 +256,17 @@ function RecordForm({
     setFieldErrors([])
     // A blank optional field is unknown, so it's sent as null rather than an empty string.
     const body: Record<string, unknown> = Object.fromEntries(
-      Object.entries(values).map(([name, value]) => [name, value === '' ? null : value]),
+      Object.entries(values).map(([name, value]) => {
+        const field = resource.fields.find((candidate) => candidate.name === name)
+        if (value === '') {
+          return [name, null]
+        }
+        return [name, field?.type === 'number' ? Number(value) : value]
+      }),
     )
+    if (offersSource && sourceDocumentId) {
+      body.sourceDocumentId = sourceDocumentId
+    }
     try {
       if (item) {
         await updateRecord(profileId, resource.path, item.id, { ...body, version: item.version })
@@ -235,6 +286,7 @@ function RecordForm({
 
   return (
     <form onSubmit={handleSubmit} className="mt-3 space-y-2 rounded border border-slate-200 p-3">
+      {resource.hint && <p className="text-sm text-slate-600">{resource.hint}</p>}
       {resource.fields.map((field) => {
         const shared = {
           className: inputClass,
@@ -265,12 +317,33 @@ function RecordForm({
                 ))}
               </select>
             ) : (
-              <input type={field.type ?? 'text'} {...shared} />
+              <input
+                type={field.type ?? 'text'}
+                step={field.type === 'number' ? 'any' : undefined}
+                {...shared}
+              />
             )}
             {fieldError && <span className="block text-red-800">{fieldError.message}</span>}
           </label>
         )
       })}
+      {offersSource && documents.length > 0 && (
+        <label className="block text-sm font-medium">
+          Source
+          <select
+            className={inputClass}
+            value={sourceDocumentId}
+            onChange={(event) => setSourceDocumentId(event.target.value)}
+          >
+            <option value="">Entered by me (user reported)</option>
+            {documents.map((document) => (
+              <option key={document.id} value={document.id}>
+                From document: {document.description ?? document.originalFilename}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
       <ErrorNote message={error} />
       <div className="flex gap-2">
         <button type="submit" disabled={busy} className={primaryButtonClass}>

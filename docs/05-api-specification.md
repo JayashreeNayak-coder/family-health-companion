@@ -153,13 +153,14 @@ Record responses include `sourceType` and `sourceDocumentId`, so the UI can alwa
 | PUT | `/profiles/{id}/medications/{medId}/schedules` | Replace schedules. One that keeps the same doses keeps its recorded history. | `EDIT` |
 | POST | `/profiles/{id}/medications/{medId}/adherence` | Record taken or skipped. 400 `NOT_A_SCHEDULED_DOSE`, 400 `DOSE_IN_FUTURE`, 409 `ALREADY_RECORDED`. | `EDIT` |
 | GET | `/profiles/{id}/medications/due?date=` | Doses of active medications due on a date, the in-app reminder list | `VIEW` |
-| GET | `/profiles/{id}/lab-results/trends?testKey=&unit=` | Comparable values only, plus a count of excluded values | `VIEW` |
+| GET | `/profiles/{id}/lab-results/trend-series` | Each test and unit with comparable values, to choose a trend from | `VIEW` |
+| GET | `/profiles/{id}/lab-results/trends?testKey=&unit=` | Comparable values only, oldest first, plus a count of excluded values. Leaving out `unit` means values with no unit. | `VIEW` |
 
 Trend responses contain values and dates only, with no interpretation such as "normal" or "abnormal".
 
-The timeline returns `entries`, newest first, and `dateUnknown`, the undated records. A date range doesn't hide undated records, because they can't be placed inside or outside it. `types` still applies to them. The timeline isn't paginated yet. It currently covers conditions (by onset date), visits, symptoms, and medications (by start date).
+The timeline returns `entries`, newest first, and `dateUnknown`, the undated records. A date range doesn't hide undated records, because they can't be placed inside or outside it. `types` still applies to them. The timeline isn't paginated yet. It currently covers conditions (by onset date), visits, symptoms, medications (by start date), and lab results (by result date). The food log isn't on the timeline.
 
-Until documents exist in Phase 11, a request with a `sourceDocumentId` returns 404 (`SOURCE_DOCUMENT_NOT_FOUND`), so manually entered records are always `USER_REPORTED`. `DOCUMENTED` without a document returns 400 (`SOURCE_DOCUMENT_REQUIRED`). Provenance can't be changed by an update.
+A `sourceDocumentId` must name a document in the same profile, or the request returns 404 (`SOURCE_DOCUMENT_NOT_FOUND`). A document implies `DOCUMENTED` when `sourceType` is left out. `DOCUMENTED` without a document returns 400 (`SOURCE_DOCUMENT_REQUIRED`), and `USER_REPORTED` with one returns 400 (`SOURCE_TYPE_MISMATCH`). Provenance can't be changed by an update.
 
 ## 6. Documents and extraction
 
@@ -174,6 +175,20 @@ Until documents exist in Phase 11, a request with a `sourceDocumentId` returns 4
 | PATCH | `/profiles/{id}/documents/{docId}/draft/items/{itemId}` | Correct an item | `EDIT` |
 | POST | `/profiles/{id}/documents/{docId}/draft/items/{itemId}/approve` | Create a confirmed record | `EDIT` |
 | POST | `/profiles/{id}/documents/{docId}/draft/items/{itemId}/reject` | Reject an item | `EDIT` |
+
+Upload fields are `file`, `category` (`PRESCRIPTION`, `LAB_REPORT`, `SCAN`, `BILL`, `PHOTO`, `OTHER`, default `OTHER`), `documentOn`, and `description`. The type comes from the file's content: anything other than PDF, JPEG, or PNG returns 415 (`UNSUPPORTED_FILE_TYPE`), an empty file 400 (`FILE_REQUIRED`), and one over 10 MB 413 (`FILE_TOO_LARGE`). `GET /profiles/{id}/documents/{docId}` returns metadata only. Responses never include the storage key or hash. The extraction and draft endpoints arrive in Phase 12.
+
+### Attachments
+
+A document can be attached to records as evidence, such as a clinic bill on a visit or a prescription photo on a medication. Attaching or detaching changes neither the record nor the document.
+
+| Method | Path | Purpose | Access |
+|---|---|---|---|
+| GET | `/profiles/{id}/attachments?recordType=&recordId=` | One type's attachments, or one record's, each with its document's metadata | `VIEW` |
+| POST | `/profiles/{id}/attachments` | `{recordType, recordId, documentId}`. 404 `RECORD_NOT_FOUND` or `DOCUMENT_NOT_FOUND` unless both are in the profile, 409 `ALREADY_ATTACHED`. | `EDIT` |
+| DELETE | `/profiles/{id}/attachments/{attachmentId}` | Detach. The document stays. | `EDIT` |
+
+`recordType` is `CONDITION`, `ALLERGY`, `DIETARY_RESTRICTION`, `VISIT`, `SYMPTOM`, `MEDICATION`, `LAB_RESULT`, or `FOOD_LOG`. Deleting a record removes its attachments, and deleting a document removes the attachments to it.
 
 Document content is never available through a public or storage URL. Responses use `Content-Disposition: attachment`, `X-Content-Type-Options: nosniff`, and `Cache-Control: no-store`.
 

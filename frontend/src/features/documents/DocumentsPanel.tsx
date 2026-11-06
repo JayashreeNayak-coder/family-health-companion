@@ -1,0 +1,119 @@
+import { useEffect, useState } from 'react'
+import { errorMessage } from '../../api/client'
+import {
+  CATEGORY_LABELS,
+  deleteDocument,
+  formatSize,
+  listDocuments,
+  type HealthDocument,
+} from '../../api/documents'
+import { Card, dangerButtonClass, ErrorNote, Missing, secondaryButtonClass } from '../../components/ui'
+import { DocumentView } from './DocumentView'
+import { UploadForm } from './UploadForm'
+
+type Props = { profileId: string; canEdit: boolean; canManage: boolean }
+
+export function DocumentsPanel({ profileId, canEdit, canManage }: Props) {
+  const [documents, setDocuments] = useState<HealthDocument[] | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [revision, setRevision] = useState(0)
+  const [uploading, setUploading] = useState(false)
+
+  useEffect(() => {
+    let ignore = false
+    listDocuments(profileId).then(
+      (page) => {
+        if (!ignore) {
+          setDocuments(page.items)
+        }
+      },
+      (failure) => {
+        if (!ignore) {
+          setError(errorMessage(failure))
+        }
+      },
+    )
+    return () => {
+      ignore = true
+    }
+  }, [profileId, revision])
+
+  function reload() {
+    setUploading(false)
+    setRevision((current) => current + 1)
+  }
+
+  async function handleDelete(document: HealthDocument) {
+    if (
+      !window.confirm(
+        `Permanently delete ${document.originalFilename}? Records that came from it keep their data, and show that the source was deleted.`,
+      )
+    ) {
+      return
+    }
+    setError(null)
+    try {
+      await deleteDocument(profileId, document.id)
+      reload()
+    } catch (failure) {
+      setError(errorMessage(failure))
+    }
+  }
+
+  return (
+    <Card title="Documents">
+      <p className="mb-3 text-sm text-slate-600">
+        Prescriptions, lab reports, scans, bills, and photos, kept as evidence. Files are private to
+        the people with access to this profile. Scans and X-rays are stored, never interpreted.
+      </p>
+      <ErrorNote message={error} />
+      {!documents && !error && <p role="status">Loading…</p>}
+      {documents && documents.length === 0 && (
+        <p className="text-sm text-slate-600">No documents uploaded.</p>
+      )}
+      {documents && documents.length > 0 && (
+        <ul className="divide-y divide-slate-200">
+          {documents.map((document) => (
+            <li key={document.id} className="py-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <strong>{document.description ?? document.originalFilename}</strong>
+                <span className="rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-700">
+                  {CATEGORY_LABELS[document.category]}
+                </span>
+              </div>
+              <p className="text-sm text-slate-600">
+                {document.originalFilename} · {formatSize(document.sizeBytes)} · Dated{' '}
+                {document.documentOn ?? <Missing />}
+              </p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <DocumentView profileId={profileId} document={document} />
+                {canManage && (
+                  <button
+                    type="button"
+                    className={dangerButtonClass}
+                    aria-label={`Delete ${document.originalFilename}`}
+                    onClick={() => void handleDelete(document)}
+                  >
+                    Delete
+                  </button>
+                )}
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+      {canEdit && !uploading && (
+        <button
+          type="button"
+          className={`mt-3 ${secondaryButtonClass}`}
+          onClick={() => setUploading(true)}
+        >
+          Upload a document
+        </button>
+      )}
+      {canEdit && uploading && (
+        <UploadForm profileId={profileId} onUploaded={reload} onCancel={() => setUploading(false)} />
+      )}
+    </Card>
+  )
+}

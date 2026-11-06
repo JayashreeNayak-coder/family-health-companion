@@ -21,6 +21,11 @@ class SymptomEntryService extends RecordService<SymptomEntry, Request, Response>
 	}
 
 	@Override
+	public RecordType recordType() {
+		return RecordType.SYMPTOM;
+	}
+
+	@Override
 	protected SymptomEntry newRecord(UUID profileId, UUID accountId, Request request) {
 		SymptomEntry record = new SymptomEntry(profileId, request.provenance(accountId));
 		apply(record, request);

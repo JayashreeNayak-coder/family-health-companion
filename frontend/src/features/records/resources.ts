@@ -1,7 +1,9 @@
+import type { RecordType } from '../../api/documents'
+
 export type FieldConfig = {
   name: string
   label: string
-  type?: 'text' | 'textarea' | 'date' | 'time' | 'tel' | 'select'
+  type?: 'text' | 'textarea' | 'date' | 'time' | 'tel' | 'select' | 'number'
   required?: boolean
   maxLength?: number
   options?: { value: string; label: string }[]
@@ -19,10 +21,15 @@ export type ResourceConfig = {
   fields: FieldConfig[]
   /** Health records show where they came from. Emergency contacts aren't health records. */
   hasProvenance: boolean
+  /** Set when documents can be attached to these records as evidence. */
+  recordType?: RecordType
+  /** Optional fields that are blank in the form, but where at least one must be filled. */
+  hint?: string
 }
 
 export const CONDITIONS: ResourceConfig = {
   path: 'conditions',
+  recordType: 'CONDITION',
   title: 'Medical conditions',
   singular: 'condition',
   titleField: 'name',
@@ -46,6 +53,7 @@ export const CONDITIONS: ResourceConfig = {
 
 export const ALLERGIES: ResourceConfig = {
   path: 'allergies',
+  recordType: 'ALLERGY',
   title: 'Allergies',
   singular: 'allergy',
   titleField: 'allergen',
@@ -60,6 +68,7 @@ export const ALLERGIES: ResourceConfig = {
 
 export const DIETARY: ResourceConfig = {
   path: 'dietary-restrictions',
+  recordType: 'DIETARY_RESTRICTION',
   title: 'Dietary restrictions and preferences',
   singular: 'dietary item',
   titleField: 'description',
@@ -81,6 +90,7 @@ export const DIETARY: ResourceConfig = {
 
 export const VISITS: ResourceConfig = {
   path: 'visits',
+  recordType: 'VISIT',
   title: 'Doctor visits',
   singular: 'visit',
   titleField: 'reason',
@@ -98,6 +108,7 @@ export const VISITS: ResourceConfig = {
 
 export const SYMPTOMS: ResourceConfig = {
   path: 'symptoms',
+  recordType: 'SYMPTOM',
   title: 'Symptoms',
   singular: 'symptom',
   titleField: 'description',
@@ -113,6 +124,7 @@ export const SYMPTOMS: ResourceConfig = {
 
 export const MEDICATIONS: ResourceConfig = {
   path: 'medications',
+  recordType: 'MEDICATION',
   title: 'Medications',
   singular: 'medication',
   titleField: 'name',
@@ -152,5 +164,50 @@ export const CONTACTS: ResourceConfig = {
     { name: 'name', label: 'Name', required: true, maxLength: 200 },
     { name: 'relationship', label: 'Relationship', maxLength: 100 },
     { name: 'phone', label: 'Phone', type: 'tel', required: true, maxLength: 30 },
+  ],
+}
+
+export const LAB_RESULTS: ResourceConfig = {
+  path: 'lab-results',
+  title: 'Lab results',
+  singular: 'lab result',
+  titleField: 'testName',
+  hasProvenance: true,
+  recordType: 'LAB_RESULT',
+  hint: 'Enter the value exactly as printed. A missing unit or date stays missing, and is never guessed.',
+  fields: [
+    { name: 'testName', label: 'Test', required: true, maxLength: 200 },
+    { name: 'valueNumeric', label: 'Value (number)', type: 'number' },
+    { name: 'valueText', label: 'Value (text, such as "Negative")', maxLength: 200 },
+    { name: 'unit', label: 'Unit', maxLength: 50 },
+    { name: 'resultOn', label: 'Result date', type: 'date' },
+    { name: 'referenceRangeAsPrinted', label: 'Reference range, as printed', maxLength: 200 },
+  ],
+}
+
+export const FOOD_LOG: ResourceConfig = {
+  path: 'food-log',
+  title: 'Food log',
+  singular: 'food entry',
+  titleField: 'description',
+  hasProvenance: false,
+  recordType: 'FOOD_LOG',
+  fields: [
+    { name: 'description', label: 'What was eaten', type: 'textarea', required: true, maxLength: 1000 },
+    {
+      name: 'mealType',
+      label: 'Meal',
+      type: 'select',
+      options: [
+        { value: '', label: 'Not specified' },
+        { value: 'BREAKFAST', label: 'Breakfast' },
+        { value: 'LUNCH', label: 'Lunch' },
+        { value: 'DINNER', label: 'Dinner' },
+        { value: 'SNACK', label: 'Snack' },
+        { value: 'OTHER', label: 'Other' },
+      ],
+    },
+    { name: 'occurredOn', label: 'Date', type: 'date' },
+    { name: 'occurredTime', label: 'Time', type: 'time' },
   ],
 }

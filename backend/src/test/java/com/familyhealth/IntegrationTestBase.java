@@ -9,7 +9,8 @@ import org.springframework.context.annotation.Import;
 @SpringBootTest(properties = {
 		"spring.datasource.url=${TEST_DB_URL:}",
 		"spring.datasource.username=${TEST_DB_USERNAME:}",
-		"spring.datasource.password=${TEST_DB_PASSWORD:}"
+		"spring.datasource.password=${TEST_DB_PASSWORD:}",
+		"app.documents.storage-dir=${java.io.tmpdir}/family-health-test-documents"
 })
 // No request dumps: they would print test passwords, and hide real log output from the logging test.
 @AutoConfigureMockMvc(print = MockMvcPrint.NONE)

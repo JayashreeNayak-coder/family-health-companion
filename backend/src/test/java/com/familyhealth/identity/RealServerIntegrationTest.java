@@ -46,7 +46,8 @@ class RealServerIntegrationTest extends IntegrationTestBase {
 					"--server.port=0",
 					"--spring.datasource.url=" + hikari.getJdbcUrl(),
 					"--spring.datasource.username=" + hikari.getUsername(),
-					"--spring.datasource.password=" + hikari.getPassword());
+					"--spring.datasource.password=" + hikari.getPassword(),
+					"--app.documents.storage-dir=" + System.getProperty("java.io.tmpdir") + "/family-health-test-documents");
 		}
 	}
 

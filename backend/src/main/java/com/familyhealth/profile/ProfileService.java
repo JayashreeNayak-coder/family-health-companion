@@ -37,8 +37,11 @@ class ProfileService implements InvitedProfileLinks {
 
 	private final AuditService audit;
 
+	private final ProfileFiles files;
+
 	ProfileService(HealthProfileRepository profiles, ProfileAccessGrantRepository grants, ProfileAccess access,
-			FamilyMembers members, AccountDirectory accounts, AuditService audit) {
+			FamilyMembers members, AccountDirectory accounts, AuditService audit, ProfileFiles files) {
+		this.files = files;
 		this.profiles = profiles;
 		this.grants = grants;
 		this.access = access;
@@ -90,11 +93,13 @@ class ProfileService implements InvitedProfileLinks {
 		return ProfileResponse.from(profiles.saveAndFlush(profile), level);
 	}
 
-	/** Foreign keys cascade to everything the profile owns. */
+	/** Foreign keys cascade to everything the profile owns. Stored files go once that commits. */
 	@Transactional
 	public void delete(UUID accountId, UUID profileId) {
 		access.require(accountId, profileId, AccessLevel.MANAGE);
-		profiles.delete(load(profileId));
+		HealthProfile profile = load(profileId);
+		files.deleteAllAfterCommit(profileId);
+		profiles.delete(profile);
 		audit.recordForProfile(AuditAction.PROFILE_DELETED, accountId, profileId, Map.of());
 	}
 

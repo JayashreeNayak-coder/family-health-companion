@@ -14,6 +14,11 @@ class DietaryRestrictionService extends RecordService<DietaryRestriction, Reques
 	}
 
 	@Override
+	public RecordType recordType() {
+		return RecordType.DIETARY_RESTRICTION;
+	}
+
+	@Override
 	protected DietaryRestriction newRecord(UUID profileId, UUID accountId, Request request) {
 		DietaryRestriction record = new DietaryRestriction(profileId, request.provenance(accountId));
 		apply(record, request);

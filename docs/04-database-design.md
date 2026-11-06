@@ -177,9 +177,14 @@ Values are comparable in a trend only when `test_key` and `unit` match exactly, 
 ## 6. Documents and AI
 
 ### `document`
-`profile_id`, `uploaded_by`, `original_filename`, `content_type`, `size_bytes`, `sha256`, `storage_key` (UNIQUE, random, contains no personal data), `category` (`LAB_REPORT`, `PRESCRIPTION`, `SCAN`, `OTHER`), `document_on`, `extraction_status` (`NOT_REQUESTED`, `QUEUED`, `PROCESSING`, `READY_FOR_REVIEW`, `FAILED`, `REVIEWED`).
+`profile_id`, `uploaded_by`, `original_filename`, `content_type` (`application/pdf`, `image/jpeg`, `image/png`, from the file's content), `size_bytes`, `sha256`, `storage_key` (UNIQUE, random, contains no personal data), `category` (`LAB_REPORT`, `PRESCRIPTION`, `SCAN`, `BILL`, `PHOTO`, `OTHER`), `document_on`, `description` (optional, user-entered), `extraction_status` (`NOT_REQUESTED`, `QUEUED`, `PROCESSING`, `READY_FOR_REVIEW`, `FAILED`, `REVIEWED`).
 
-The stored file is never altered by the system.
+The stored file is never altered by the system. Each health record table's `source_document_id` is a foreign key to `document`.
+
+### `record_attachment`
+`profile_id`, `document_id` (FK, cascades), `record_type`, `record_id`, `created_by`. Unique: (`record_type`, `record_id`, `document_id`).
+
+A document attached to a record as evidence, separate from provenance: a record has at most one source document but may have several attachments. `record_id` points into the table named by `record_type`, so it can't be a foreign key. The service checks that the record exists in the same profile, and deletes a record's attachments when it deletes the record (`DECISIONS.md`, D-020).
 
 ### `extraction_job` (owned through `document`)
 `document_id`, `status`, `attempts`, `provider`, `model`, `prompt_version`, `error_code`, `started_at`, `finished_at`.
@@ -201,7 +206,7 @@ Per-item status allows partial approval. Draft data stays out of the confirmed r
 
 | Table | Main columns |
 |---|---|
-| `food_log_entry` | `profile_id`, `description` NOT NULL, `meal_type`, `occurred_on`, `occurred_time`, `saved_recipe_id` nullable FK |
+| `food_log_entry` | `profile_id`, `description` NOT NULL, `meal_type` (`BREAKFAST`, `LUNCH`, `DINNER`, `SNACK`, `OTHER`, or NULL), `occurred_on`, `occurred_time`, `saved_recipe_id` nullable FK (added in Phase 14) |
 | `saved_recipe` | `profile_id`, `created_by`, `title`, `ingredients jsonb`, `steps jsonb`, `mode` (`GENERAL`, `HEALTH_AWARE`), `prompt_version` |
 | `health_summary` | `profile_id`, `generated_by`, `content`, `period_from`, `period_to`, `source_refs jsonb`, `provider`, `model`, `prompt_version` |
 | `emergency_card` | `profile_id` UNIQUE, `enabled`, `token_hash` UNIQUE, `token_rotated_at` |
@@ -247,7 +252,7 @@ Migrations arrive with the phase that needs them, rather than as one schema up f
 | 8 | `medication`, `medication_schedule`, `adherence_event` |
 | 9 | `lab_result` |
 | 10 | `food_log_entry` |
-| 11 | `document` |
+| 11 | `document`, `record_attachment`, and the `source_document_id` foreign keys |
 | 12 | `extraction_job`, `extraction_draft`, `extraction_draft_item`, `ai_usage_event` |
 | 14 | `saved_recipe` |
 | 16 | `health_summary` |

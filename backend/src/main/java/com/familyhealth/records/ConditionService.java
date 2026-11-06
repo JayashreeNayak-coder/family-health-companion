@@ -31,6 +31,11 @@ class ConditionService extends RecordService<Condition, Request, Response> imple
 	}
 
 	@Override
+	public RecordType recordType() {
+		return RecordType.CONDITION;
+	}
+
+	@Override
 	protected Condition newRecord(UUID profileId, UUID accountId, Request request) {
 		Condition record = new Condition(profileId, request.provenance(accountId));
 		apply(record, request);

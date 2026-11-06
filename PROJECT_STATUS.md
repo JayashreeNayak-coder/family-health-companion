@@ -1,9 +1,9 @@
 # Family Health Companion
 ## Project Status
 
-**Last updated:** 2026-11-05
-**Current phase:** Phases 5 to 8 complete. Phase 3 (deployment) is waiting on the owner. Phase 9 is next.
-**Application code:** Accounts, families, profiles and access grants, conditions, allergies, dietary items, emergency contacts, visits, symptoms, medications with schedules and adherence, and the timeline. No documents or AI.
+**Last updated:** 2026-11-06
+**Current phase:** Phases 5 to 11 complete. Phase 3 (deployment) is waiting on the owner. Phase 12 (AI) is next and needs the owner's API key and budget.
+**Application code:** Accounts, families, profiles and access grants, conditions, allergies, dietary items, emergency contacts, visits, symptoms, medications with schedules and adherence, lab results with trends, food log, document upload with attachments on records, and the timeline. No AI.
 
 ## Environment
 
@@ -38,9 +38,9 @@
 | 6 | Conditions, allergies, restrictions, emergency contacts, and provenance | Done |
 | 7 | Visits, symptoms, and first timeline | Done |
 | 8 | Medication, adherence, and reminders | Done |
-| 9 | Lab results and trends | Not started |
-| 10 | Food log | Not started |
-| 11 | Document upload and private storage | Not started |
+| 9 | Lab results and trends | Done |
+| 10 | Food log | Done |
+| 11 | Document upload and private storage, with attachments on records | Done |
 | 12 | AI layer, then extraction with review and approval | Not started |
 | 13 | Voice transcription | Not started |
 | 14 | General meal assistant | Not started |
@@ -54,12 +54,13 @@
 
 | Suite | Result | Where |
 |---|---|---|
-| Backend unit tests (7) and integration tests (143) | Pass | Local (temporary PostgreSQL 18). CI: see the Git note below. |
-| Frontend tests (42), lint, type check, build | Pass | Local. CI: see the Git note below. |
-| Full flow from registration to linking and deleting a profile, through the Vite dev proxy against the real backend | Pass, with `curl` | Local |
+| Backend unit tests (9) and integration tests (179) | Pass | Local (temporary PostgreSQL 18). CI: see the Git note below. |
+| Frontend tests (55), lint, type check, build | Pass | Local. CI: see the Git note below. |
+| Full flow from registration to linking and deleting a profile, through the Vite dev proxy against the real backend | Pass, with `curl` (Phase 8) | Local |
+| Lab trend, food log, upload, download, rejected HTML, 12 MB upload, attachment, and document deletion against the real backend | Pass, with `curl` | Local |
 | Docker image builds, and the auth flow through nginx | Last passed at Phase 4. Only CI can check this. | CI only |
 
-**Git note:** Phases 5 to 8 are local commits until pushed, and CI only runs after a push.
+**Git note:** The owner pushed Phases 5 to 8, but no CI run was seen; the owner is checking that Actions is enabled. Phases 9 to 11 are uncommitted until the owner asks.
 
 ## Known issues
 
@@ -74,13 +75,18 @@
 - A recorded dose can't be corrected. Taken or skipped is final in this version.
 - Reminders are the in-app "Doses due" list. Nothing is sent outside the app, and the list only updates when opened.
 - Record lists in the UI show the first 100 items, and the timeline isn't paginated.
-- Records can't be `DOCUMENTED` until documents exist in Phase 11.
+- Uploaded files are on the server's disk until object storage is chosen in Phase 3 (`DECISIONS.md`, D-020). Back that folder up with the database.
+- No virus scanning of uploads (`docs/06` section 5).
+- A document's category, date, and description can't be edited after upload.
+- An upload attached from a record, where the attach step then fails, stays in Documents unattached.
+- Lab trends are shown for one test and unit at a time. Units are never converted.
+- Docker image changes for document storage are verified only by CI.
 
 ## Next step
 
-1. **Owner:** create the local databases (`README.md`), try the app in a browser, and report anything wrong.
-2. **Owner:** review `DECISIONS.md`, D-019.
-3. **Phase 9: lab results and trends.** Routine, so it can start without a further decision. Phases 10 and 11 follow.
+1. **Owner:** restart the backend (the running one has old code), try lab results, food log, documents, and attachments, and report anything wrong.
+2. **Owner:** review `DECISIONS.md`, D-019 and D-020, and confirm CI runs on GitHub.
+3. **Phase 12: AI extraction with review.** Needs the owner's Claude API key, set as `ANTHROPIC_API_KEY` on the machine and never in Git or chat, and a monthly spend limit.
 
 Decisions the owner must make later:
 

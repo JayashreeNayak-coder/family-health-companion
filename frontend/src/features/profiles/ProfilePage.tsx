@@ -2,13 +2,17 @@ import { useCallback, useEffect, useState } from 'react'
 import { errorMessage } from '../../api/client'
 import { getProfile, type Profile } from '../../api/profiles'
 import { ErrorNote, secondaryButtonClass } from '../../components/ui'
+import { DocumentsPanel } from '../documents/DocumentsPanel'
 import { MedicationsPanel } from '../medication/MedicationsPanel'
+import { LabTrendsPanel } from '../records/LabTrendsPanel'
 import { RecordSection } from '../records/RecordSection'
 import {
   ALLERGIES,
   CONDITIONS,
   CONTACTS,
   DIETARY,
+  FOOD_LOG,
+  LAB_RESULTS,
   SYMPTOMS,
   VISITS,
   type ResourceConfig,
@@ -24,12 +28,17 @@ const BASE_TABS: Tab[] = [
   { id: 'history', label: 'Health history' },
   { id: 'visits', label: 'Visits and symptoms' },
   { id: 'medications', label: 'Medications' },
+  { id: 'labs', label: 'Lab results' },
+  { id: 'food', label: 'Food log' },
+  { id: 'documents', label: 'Documents' },
   { id: 'timeline', label: 'Timeline' },
 ]
 
 const SECTIONS: Record<string, ResourceConfig[]> = {
   history: [CONDITIONS, ALLERGIES, DIETARY, CONTACTS],
   visits: [VISITS, SYMPTOMS],
+  labs: [LAB_RESULTS],
+  food: [FOOD_LOG],
 }
 
 type Props = {
@@ -94,6 +103,14 @@ export function ProfilePage({ profileId, onBack }: Props) {
           ))}
           {tab === 'medications' && (
             <MedicationsPanel profileId={profile.id} canEdit={profile.accessLevel !== 'VIEW'} />
+          )}
+          {tab === 'labs' && <LabTrendsPanel profileId={profile.id} />}
+          {tab === 'documents' && (
+            <DocumentsPanel
+              profileId={profile.id}
+              canEdit={profile.accessLevel !== 'VIEW'}
+              canManage={profile.accessLevel === 'MANAGE'}
+            />
           )}
           {tab === 'timeline' && <TimelinePanel profileId={profile.id} />}
           {tab === 'access' && <AccessPanel profile={profile} />}

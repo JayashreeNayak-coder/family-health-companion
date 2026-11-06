@@ -14,6 +14,11 @@ class AllergyService extends RecordService<Allergy, Request, Response> {
 	}
 
 	@Override
+	public RecordType recordType() {
+		return RecordType.ALLERGY;
+	}
+
+	@Override
 	protected Allergy newRecord(UUID profileId, UUID accountId, Request request) {
 		Allergy record = new Allergy(profileId, request.provenance(accountId));
 		apply(record, request);

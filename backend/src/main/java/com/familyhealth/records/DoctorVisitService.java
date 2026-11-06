@@ -23,6 +23,11 @@ class DoctorVisitService extends RecordService<DoctorVisit, Request, Response> i
 	}
 
 	@Override
+	public RecordType recordType() {
+		return RecordType.VISIT;
+	}
+
+	@Override
 	protected DoctorVisit newRecord(UUID profileId, UUID accountId, Request request) {
 		DoctorVisit record = new DoctorVisit(profileId, request.provenance(accountId));
 		apply(record, request);

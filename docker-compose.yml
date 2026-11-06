@@ -25,6 +25,9 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       # This stack serves plain HTTP on localhost. Any HTTPS deployment must leave this true.
       SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-false}
+    volumes:
+      # Uploaded originals. Private: no other service mounts this.
+      - documents-data:/var/lib/family-health/documents
     depends_on:
       db:
         condition: service_healthy
@@ -50,3 +53,4 @@ services:
 
 volumes:
   db-data:
+  documents-data:

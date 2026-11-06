@@ -81,7 +81,8 @@ The SRS requires "family-member-specific access permissions" but does not define
 - **Allowed types:** PDF, JPEG, PNG. HTML, SVG, and Office files are rejected.
 - **Type check:** the file's actual content signature is checked, never only the extension or the browser's claimed type.
 - **Size limit:** 10 MB per file, enforced by both nginx and Spring.
-- **Storage:** private bucket, with random keys containing no personal data.
+- **Storage:** private bucket, with random keys containing no personal data. Until hosting is chosen, a private folder on the server that nothing else serves (`DECISIONS.md`, D-020).
+- **Scans and X-rays** are stored as evidence only. The system never interprets an image.
 - **Download:** streamed through the backend after an access check, sent as an attachment.
 - **Not included in the prototype:** virus scanning. Listed as a limitation.
 

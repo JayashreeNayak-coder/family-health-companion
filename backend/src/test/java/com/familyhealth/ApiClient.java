@@ -8,7 +8,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.AbstractMockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.test.web.servlet.request.MockMultipartHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -76,6 +79,16 @@ public final class ApiClient {
 		return send(MockMvcRequestBuilders.delete(path).header("X-CSRF-TOKEN", csrfToken()));
 	}
 
+	/** A multipart upload, as the browser's FormData sends it. */
+	public MockHttpServletResponse upload(String path, String filename, String claimedType, byte[] content,
+			Map<String, String> fields) throws Exception {
+		MockMultipartHttpServletRequestBuilder request = MockMvcRequestBuilders.multipart(path)
+			.file(new MockMultipartFile("file", filename, claimedType, content));
+		fields.forEach(request::param);
+		request.header("X-CSRF-TOKEN", csrfToken());
+		return send(request);
+	}
+
 	/** Registers and signs in a new account, and returns its ID. */
 	public String signUp(String email, String displayName) throws Exception {
 		String id = JsonPath.read(register(email, PASSWORD, displayName).getContentAsString(), "$.id");
@@ -111,7 +124,7 @@ public final class ApiClient {
 		return JSON.writeValueAsString(body);
 	}
 
-	private MockHttpServletResponse send(MockHttpServletRequestBuilder request) throws Exception {
+	private MockHttpServletResponse send(AbstractMockHttpServletRequestBuilder<?> request) throws Exception {
 		if (sessionCookie != null) {
 			request.cookie(sessionCookie);
 		}

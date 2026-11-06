@@ -49,7 +49,11 @@ class RecordMatrixIntegrationTest extends IntegrationTestBase {
 				new Resource("symptoms", Map.of("description", "Synthetic cough", "occurredOn", "2026-01-15"),
 						"description", Map.of("description", " ")),
 				new Resource("medications", Map.of("name", "Synthetic medicine", "dosageAsRecorded", "1 tablet"), "name",
-						Map.of("name", "Synthetic medicine", "startOn", "2026-02-01", "endOn", "2026-01-01")));
+						Map.of("name", "Synthetic medicine", "startOn", "2026-02-01", "endOn", "2026-01-01")),
+				new Resource("lab-results", Map.of("testName", "Synthetic HbA1c", "valueNumeric", 5.4, "unit", "%"),
+						"testName", Map.of("testName", "Synthetic HbA1c")),
+				new Resource("food-log", Map.of("description", "Synthetic rice and dal", "mealType", "LUNCH"),
+						"description", Map.of("description", "Rice", "occurredTime", "13:00")));
 	}
 
 	@Autowired

@@ -13,6 +13,11 @@ spring:
     hibernate:
       ddl-auto: validate
     open-in-view: false
+  servlet:
+    multipart:
+      # A little above app.documents.max-file-size, so the service reports an oversized file itself.
+      max-file-size: 11MB
+      max-request-size: 11MB
   session:
     jdbc:
       # Flyway owns these tables too.
@@ -31,6 +36,10 @@ server:
         secure: ${SESSION_COOKIE_SECURE:true}
 
 app:
+  documents:
+    # Private folder for uploaded originals, outside anything the web server serves. Required.
+    storage-dir: ${DOCUMENT_STORAGE_DIR:}
+    max-file-size: 10MB
   session:
     absolute-timeout: 12h
   login-rate-limit:

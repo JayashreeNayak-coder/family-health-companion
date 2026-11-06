@@ -28,7 +28,7 @@ export function stubApi(routes: Record<string, Reply | Reply[]>) {
     if (route === 'GET /auth/csrf') {
       return new Response(JSON.stringify({ headerName: 'X-CSRF-TOKEN', token: 'csrf-1' }))
     }
-    const replies = remaining.get(route)
+    const replies = remaining.get(route) ?? defaultReplies(route)
     if (!replies) {
       throw new Error(`Unexpected request: ${route}`)
     }
@@ -42,6 +42,17 @@ export function stubApi(routes: Record<string, Reply | Reply[]>) {
   })
   vi.stubGlobal('fetch', stub)
   return stub
+}
+
+/** Record lists also load their attachments, and record forms the documents to cite. Both default to none. */
+function defaultReplies(route: string): Reply[] | undefined {
+  if (/^GET \/profiles\/[^/]+\/attachments\?recordType=[A-Z_]+$/.test(route)) {
+    return [{ status: 200, body: [] }]
+  }
+  if (/^GET \/profiles\/[^/]+\/documents\?size=100$/.test(route)) {
+    return [page([])]
+  }
+  return undefined
 }
 
 export function requestBody(stub: ReturnType<typeof stubApi>, method: string, path: string) {

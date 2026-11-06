@@ -17,7 +17,11 @@ This repository is the project's memory, so a new conversation doesn't need the 
 - Keep plans brief. Routine phases can run together (`DECISIONS.md`, D-018).
 
 ## Current state
-- Phases 4 to 8 are built: identity, families and profiles, manual health records, the timeline, and medications. See `PROJECT_STATUS.md` for the phase and what is blocked.
+- Phases 4 to 11 are built: identity, families and profiles, manual health records, the timeline, medications, lab results, food log, and documents with attachments.
+- Documents live in `com.familyhealth.document`. Records reach them only through `DocumentLookup`, and document deletion reaches records only through `DocumentReferences` (implemented by `records.DocumentReferenceCleaner`, which lists the health record tables: add a new one there). Profile deletion removes files through `profile.ProfileFiles`.
+- A record type that can take attachments returns its `RecordType` from `recordType()` in its service. `RecordService` deletes its attachments and checks source documents.
+- MockMvc encodes the URL it's given, so pass query values unencoded in tests (`unit=%`, not `unit=%25`).
+- Git Bash's `curl` can't read `/tmp` files in `-F file=@...`; use a Windows path. See `PROJECT_STATUS.md` for the phase and what is blocked.
 - A new profile-owned record extends `HealthRecord` (or `ProfileRecord` if it isn't a health record), with a service extending `RecordService` and a controller extending `RecordController`. Those two carry the access check and the endpoints. Add a row to `RecordMatrixIntegrationTest`, and implement `TimelineSource` if it belongs on the timeline.
 - `docs/01` to `docs/08` are the approved baseline.
 

@@ -20,6 +20,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 /**
@@ -91,6 +92,14 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 		ProblemDetail body = problem(HttpStatus.BAD_REQUEST, "VALIDATION_FAILED", "Validation failed");
 		body.setProperty("errors", errors);
 		return handleExceptionInternal(ex, body, headers, status, request);
+	}
+
+	/** A request over the multipart limit never reaches the upload service. */
+	@Override
+	protected @Nullable ResponseEntity<Object> handleMaxUploadSizeExceededException(MaxUploadSizeExceededException ex,
+			HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+		ProblemDetail body = problem(HttpStatus.CONTENT_TOO_LARGE, "FILE_TOO_LARGE", "The file is larger than 10 MB");
+		return handleExceptionInternal(ex, body, headers, HttpStatus.CONTENT_TOO_LARGE, request);
 	}
 
 	/** Framework errors (malformed JSON, wrong method, unknown path) get a code too, and lose their detail text. */

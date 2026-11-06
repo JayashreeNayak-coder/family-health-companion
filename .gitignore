@@ -5,6 +5,8 @@
 
 # Backend
 backend/target/
+# Uploaded documents in local development
+backend/data/
 
 # Frontend
 frontend/node_modules/
