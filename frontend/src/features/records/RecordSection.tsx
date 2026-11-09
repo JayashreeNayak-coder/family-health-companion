@@ -1,3 +1,4 @@
+import { Pencil, Plus, Trash2 } from 'lucide-react'
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
 import { ApiError, errorMessage, type FieldError } from '../../api/client'
 import { listAttachments, listDocuments, type Attachment, type HealthDocument } from '../../api/documents'
@@ -8,20 +9,15 @@ import {
   updateRecord,
   type RecordItem,
 } from '../../api/records'
-import {
-  Card,
-  dangerButtonClass,
-  ErrorNote,
-  inputClass,
-  Missing,
-  primaryButtonClass,
-  secondaryButtonClass,
-} from '../../components/ui'
+import { SourceBadge } from '../../components/Badge'
+import { Button } from '../../components/Button'
+import { Card } from '../../components/Card'
+import { Dialog, useConfirm } from '../../components/Dialog'
+import { EmptyState, ErrorNote, Loading, Missing } from '../../components/Feedback'
+import { useToast } from '../../components/Toast'
+import { inputClass } from '../../components/ui'
 import { Attachments } from '../documents/Attachments'
 import type { FieldConfig, ResourceConfig } from './resources'
-import { SourceBadge } from '../../components/Badge'
-import { useConfirm } from '../../components/Dialog'
-import { useToast } from '../../components/Toast'
 
 type Props = {
   profileId: string
@@ -47,14 +43,14 @@ function formFrom(resource: ResourceConfig, item: RecordItem): Record<string, st
 }
 
 /** A time arrives as 08:30. A missing value is null, and stays distinct from an empty string. */
-function displayValue(value: unknown, field: FieldConfig): string | null {
+export function displayValue(value: unknown, field: FieldConfig): string | null {
   if (value === null || value === undefined || value === '') {
     return null
   }
   return field.type === 'time' ? String(value).slice(0, 5) : String(value)
 }
 
-function titleOf(resource: ResourceConfig, item: RecordItem): string {
+export function titleOf(resource: ResourceConfig, item: RecordItem): string {
   const title = item[resource.titleField]
   return title ? String(title) : (resource.fallbackTitle ?? resource.singular)
 }
@@ -62,6 +58,9 @@ function titleOf(resource: ResourceConfig, item: RecordItem): string {
 function optionLabel(field: FieldConfig, value: string): string {
   return field.options?.find((option) => option.value === value)?.label ?? value
 }
+
+const iconButton =
+  'grid size-9 place-items-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800'
 
 export function RecordSection({ profileId, canEdit, resource, renderItemExtras }: Props) {
   const [items, setItems] = useState<RecordItem[] | null>(null)
@@ -120,104 +119,125 @@ export function RecordSection({ profileId, canEdit, resource, renderItemExtras }
     }
   }
 
+  const addButton = canEdit && (
+    <Button icon={Plus} onClick={() => setEditing('new')}>
+      Add {resource.singular}
+    </Button>
+  )
+
   return (
-    <Card title={resource.title}>
+    <Card title={resource.title} actions={addButton}>
       {confirmDialog}
       <ErrorNote message={error} />
-      {!items && !error && <p role="status">Loading…</p>}
+      {!items && !error && <Loading />}
       {items && items.length === 0 && (
-        <p className="text-sm text-slate-600">
-          None recorded. This doesn't mean there are none, only that nothing has been entered.
-        </p>
+        <EmptyState title="None recorded">
+          This doesn't mean there are none, only that nothing has been entered.
+        </EmptyState>
       )}
       {items && items.length > 0 && (
-        <ul className="divide-y divide-slate-200">
-          {items.map((item) => (
-            <li key={item.id} className="py-3">
-              <div className="flex flex-wrap items-center gap-2">
-                <strong>{titleOf(resource, item)}</strong>
-                {resource.hasProvenance && (
-                  <SourceBadge
-                    sourceType={item.sourceType}
-                    sourceDocumentDeletedAt={item.sourceDocumentDeletedAt}
+        <ul className="divide-y divide-slate-100">
+          {items.map((item) => {
+            const title = titleOf(resource, item)
+            return (
+              <li key={item.id} className="py-4 first:pt-0 last:pb-0">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex min-w-0 flex-wrap items-center gap-2">
+                    <h4 className="font-semibold break-words text-slate-900">{title}</h4>
+                    {resource.hasProvenance && (
+                      <SourceBadge
+                        sourceType={item.sourceType}
+                        sourceDocumentDeletedAt={item.sourceDocumentDeletedAt}
+                      />
+                    )}
+                  </div>
+                  {canEdit && (
+                    <div className="-mt-1.5 flex shrink-0 gap-1">
+                      <button
+                        type="button"
+                        aria-label={`Edit ${title}`}
+                        title="Edit"
+                        onClick={() => setEditing(item)}
+                        className={iconButton}
+                      >
+                        <Pencil aria-hidden="true" className="size-4" />
+                      </button>
+                      <button
+                        type="button"
+                        aria-label={`Delete ${title}`}
+                        title="Delete"
+                        onClick={() => void handleDelete(item)}
+                        className={`${iconButton} hover:bg-red-50 hover:text-red-700`}
+                      >
+                        <Trash2 aria-hidden="true" className="size-4" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <dl className="mt-2 grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2 lg:grid-cols-3">
+                  {resource.fields
+                    .filter((field) => field.name !== resource.titleField)
+                    .map((field) => {
+                      const value = displayValue(item[field.name], field)
+                      return (
+                        <div
+                          key={field.name}
+                          className={field.type === 'textarea' ? 'sm:col-span-2 lg:col-span-3' : undefined}
+                        >
+                          <dt className="text-xs font-medium text-slate-500">{field.label}</dt>
+                          <dd className="mt-0.5 break-words whitespace-pre-line text-slate-800">
+                            {value === null ? (
+                              <Missing />
+                            ) : field.type === 'select' ? (
+                              optionLabel(field, value)
+                            ) : (
+                              value
+                            )}
+                          </dd>
+                        </div>
+                      )
+                    })}
+                </dl>
+                {recordType && (
+                  <Attachments
+                    profileId={profileId}
+                    recordType={recordType}
+                    recordId={item.id}
+                    recordTitle={title}
+                    attachments={attachments.filter((attachment) => attachment.recordId === item.id)}
+                    canEdit={canEdit}
+                    onChanged={() => setRevision((current) => current + 1)}
                   />
                 )}
-              </div>
-              <dl className="mt-1 grid gap-x-4 text-sm sm:grid-cols-2">
-                {resource.fields
-                  .filter((field) => field.name !== resource.titleField)
-                  .map((field) => {
-                    const value = displayValue(item[field.name], field)
-                    return (
-                      <div key={field.name} className="flex gap-1">
-                        <dt className="text-slate-600">{field.label}:</dt>
-                        <dd>
-                          {value === null ? (
-                            <Missing />
-                          ) : field.type === 'select' ? (
-                            optionLabel(field, value)
-                          ) : (
-                            value
-                          )}
-                        </dd>
-                      </div>
-                    )
-                  })}
-              </dl>
-              {recordType && (
-                <Attachments
-                  profileId={profileId}
-                  recordType={recordType}
-                  recordId={item.id}
-                  recordTitle={titleOf(resource, item)}
-                  attachments={attachments.filter((attachment) => attachment.recordId === item.id)}
-                  canEdit={canEdit}
-                  onChanged={() => setRevision((current) => current + 1)}
-                />
-              )}
-              {renderItemExtras?.(item)}
-              {canEdit && (
-                <div className="mt-2 flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    className={secondaryButtonClass}
-                    aria-label={`Edit ${titleOf(resource, item)}`}
-                    onClick={() => setEditing(item)}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    className={dangerButtonClass}
-                    aria-label={`Delete ${titleOf(resource, item)}`}
-                    onClick={() => void handleDelete(item)}
-                  >
-                    Delete
-                  </button>
-                </div>
-              )}
-            </li>
-          ))}
+                {renderItemExtras?.(item)}
+              </li>
+            )
+          })}
         </ul>
       )}
-      {canEdit && editing === null && (
-        <button type="button" className={`mt-3 ${secondaryButtonClass}`} onClick={() => setEditing('new')}>
-          Add {resource.singular}
-        </button>
-      )}
-      {canEdit && editing !== null && (
-        <RecordForm
-          key={editing === 'new' ? 'new' : editing.id}
-          profileId={profileId}
-          resource={resource}
-          item={editing === 'new' ? null : editing}
-          onSaved={() => {
-            toast('Saved')
-            reload()
-          }}
-          onCancel={() => setEditing(null)}
-        />
-      )}
+      <Dialog
+        open={canEdit && editing !== null}
+        title={
+          editing === 'new'
+            ? `Add ${resource.singular}`
+            : `Edit ${editing ? titleOf(resource, editing) : resource.singular}`
+        }
+        onClose={() => setEditing(null)}
+      >
+        {editing !== null && (
+          <RecordForm
+            key={editing === 'new' ? 'new' : editing.id}
+            profileId={profileId}
+            resource={resource}
+            item={editing === 'new' ? null : editing}
+            onSaved={() => {
+              toast('Saved')
+              reload()
+            }}
+            onCancel={() => setEditing(null)}
+          />
+        )}
+      </Dialog>
     </Card>
   )
 }
@@ -299,7 +319,7 @@ function RecordForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="mt-3 space-y-2 rounded border border-slate-200 p-3">
+    <form onSubmit={handleSubmit} className="space-y-4">
       {resource.hint && <p className="text-sm text-slate-600">{resource.hint}</p>}
       {resource.fields.map((field) => {
         const shared = {
@@ -312,7 +332,7 @@ function RecordForm({
         }
         const fieldError = fieldErrors.find((candidate) => candidate.field === field.name)
         return (
-          <label key={field.name} className="block text-sm font-medium">
+          <label key={field.name} className="block text-sm font-medium text-slate-800">
             {field.label}
             {!field.required && field.type !== 'select' && ' (optional)'}
             {field.type === 'textarea' ? (
@@ -337,12 +357,12 @@ function RecordForm({
                 {...shared}
               />
             )}
-            {fieldError && <span className="block text-red-800">{fieldError.message}</span>}
+            {fieldError && <span className="mt-1 block font-normal text-red-700">{fieldError.message}</span>}
           </label>
         )
       })}
       {offersSource && documents.length > 0 && (
-        <label className="block text-sm font-medium">
+        <label className="block text-sm font-medium text-slate-800">
           Source
           <select
             className={inputClass}
@@ -359,13 +379,13 @@ function RecordForm({
         </label>
       )}
       <ErrorNote message={error} />
-      <div className="flex flex-wrap gap-2">
-        <button type="submit" disabled={busy} className={primaryButtonClass}>
-          Save
-        </button>
-        <button type="button" onClick={onCancel} className={secondaryButtonClass}>
+      <div className="flex flex-wrap justify-end gap-2 pt-2">
+        <Button size="md" onClick={onCancel}>
           Cancel
-        </button>
+        </Button>
+        <Button type="submit" variant="primary" size="md" busy={busy}>
+          Save
+        </Button>
       </div>
     </form>
   )

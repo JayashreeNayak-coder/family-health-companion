@@ -110,6 +110,7 @@ test('captures every page', async ({ page }, info) => {
 
   await page.getByRole('main').getByRole('link', { name: 'Ravi Demo' }).click()
   const tabs = [
+    'Overview',
     'Details',
     'Health history',
     'Visits and symptoms',
@@ -129,6 +130,10 @@ test('captures every page', async ({ page }, info) => {
   await page.getByRole('navigation', { name: 'Profile sections' }).getByRole('link', { name: 'Health history' }).click()
   await page.reload()
   await expect(page.getByRole('link', { name: 'Health history', exact: true })).toHaveAttribute('aria-current', 'page')
+  await page.getByRole('button', { name: /^Edit Penicillin/ }).click()
+  await expect(page.getByRole('dialog')).toBeVisible()
+  await page.screenshot({ path: `e2e/screenshots/${info.project.name}/19-edit-dialog.png` })
+  await page.keyboard.press('Escape')
   await page.getByRole('button', { name: /^Delete Penicillin/ }).click()
   await expect(page.getByRole('dialog')).toBeVisible()
   await page.screenshot({ path: `e2e/screenshots/${info.project.name}/20-confirm-dialog.png` })

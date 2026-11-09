@@ -6,6 +6,7 @@
 import { useMemo, useSyncExternalStore, type AnchorHTMLAttributes, type MouseEvent } from 'react'
 
 export const PROFILE_SECTIONS = [
+  'overview',
   'details',
   'history',
   'visits',
@@ -42,7 +43,7 @@ export function parseRoute(pathname: string): Route {
     return { name: 'register' }
   }
   if (parts[0] === 'profiles' && parts.length >= 2 && parts.length <= 3) {
-    const section = parts[2] ?? 'details'
+    const section = parts[2] ?? 'overview'
     if (isSection(section)) {
       return { name: 'profile', profileId: parts[1], section }
     }
@@ -50,9 +51,9 @@ export function parseRoute(pathname: string): Route {
   return { name: 'notFound' }
 }
 
-export function profilePath(profileId: string, section: ProfileSection = 'details'): string {
+export function profilePath(profileId: string, section: ProfileSection = 'overview'): string {
   const base = `/profiles/${encodeURIComponent(profileId)}`
-  return section === 'details' ? base : `${base}/${section}`
+  return section === 'overview' ? base : `${base}/${section}`
 }
 
 const NAVIGATED = 'fhc:navigate'

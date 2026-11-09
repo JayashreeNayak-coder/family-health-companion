@@ -2,7 +2,7 @@
 ## Project Status
 
 **Last updated:** 2026-11-09
-**Current phase:** Phases 5 to 12 complete, including a real Gemini run. UI redesign in progress: UI-1 to UI-3 done. Phase 3 (deployment) is waiting on the owner.
+**Current phase:** Phases 5 to 12 complete, including a real Gemini run. UI redesign in progress: UI-1 to UI-4 done. Phase 3 (deployment) is waiting on the owner.
 **Application code:** Accounts, families, profiles and access grants, conditions, allergies, dietary items, emergency contacts, visits, symptoms, medications with schedules and adherence, lab results with trends, food log, document upload with attachments on records, AI reading of documents as a reviewed draft (Gemini), and the timeline.
 
 ## Environment
@@ -46,7 +46,7 @@
 | UI-1 | Redesign: design tokens and core components | Done |
 | UI-2 | Redesign: app shell, page addresses, sign-in | Done |
 | UI-3 | Redesign: home overview and family sharing | Done |
-| UI-4 | Redesign: profile header, overview, records | Not started |
+| UI-4 | Redesign: profile header, overview, records | Done |
 | UI-5 | Redesign: medications, lab results, timeline | Not started |
 | UI-6 | Redesign: documents and AI review | Not started |
 | UI-7 | Redesign: accessibility and responsive pass | Not started |
@@ -62,18 +62,19 @@
 | Suite | Result | Where |
 |---|---|---|
 | Backend unit tests (17) and integration tests (188) | Pass | Local (temporary PostgreSQL 18). CI: see the Git note below. |
-| Frontend tests (85), lint, type check, build | Pass | Local. CI: see the Git note below. |
+| Frontend tests (89), lint, type check, build | Pass | Local. CI: see the Git note below. |
 | Full flow from registration to linking and deleting a profile, through the Vite dev proxy against the real backend | Pass, with `curl` (Phase 8) | Local |
 | Lab trend, food log, upload, download, rejected HTML, 12 MB upload, attachment, and document deletion against the real backend | Pass, with `curl` | Local |
 | Gemini client against a local stand-in server: request shape, key header, timeouts, and error codes | Pass | Local (unit) |
 | A real Gemini extraction of a synthetic prescription PDF, approval of one item, and an injected instruction that was ignored | Pass (`gemini-3.5-flash`) | Local, owner's key |
-| Screenshots of every page at 390, 768, and 1280 px, with no sideways scrolling (`npm run screenshots`) | Pass (UI-3), including the phone menu, the invite dialog, and a page refresh that keeps the open tab | Local, against the owner's running dev backend |
+| Screenshots of every page at 390, 768, and 1280 px, with no sideways scrolling (`npm run screenshots`) | Pass (UI-4), including the phone menu, the invite and record edit dialogs, and a page refresh that keeps the open tab | Local, against the owner's running dev backend |
 | Docker image builds, and the auth flow through nginx | Last passed at Phase 4. Only CI can check this. | CI only |
 
 **Git note:** Phases 9 to 12 are local commits. The owner pushes; no CI run has been seen yet, and the owner is checking that Actions is enabled.
 
 ## Known issues
 
+- A profile's Overview loads seven record lists separately (one request each). Fine for a prototype; a single summary endpoint could replace them later.
 - Home has no "doses due today" summary. It would need one request per profile, or a new backend endpoint (owner's decision).
 - An invitation can offer a dependent's profile to be linked to the invited account. The backend allows it and the old screen did the same. Owner to confirm whether only adult profiles should be offered.
 - The sidebar's profile list doesn't see changes other family members make until the page is reloaded.
@@ -103,7 +104,7 @@
 1. **Owner:** confirm CI runs on GitHub (pushed on 2026-11-06).
 2. **Owner:** start the backend from PowerShell as in `README.md`, and try **Read with AI** on a synthetic prescription or lab report.
 3. **Owner:** review `DECISIONS.md`, D-019 and D-020. D-021 (free tier, synthetic data only) is confirmed.
-4. **UI/UX redesign:** approved (`DECISIONS.md`, D-023). UI-1 to UI-3 are done. **Owner:** refresh `npm run dev` and look at sign-in, the sidebar, Home, and profile tabs. UI-4 (profile header, overview, records) is next. Phases 14 to 16 follow.
+4. **UI/UX redesign:** approved (`DECISIONS.md`, D-023). UI-1 to UI-4 are done (UI-2 and UI-3 committed; UI-4 not yet). **Owner:** refresh `npm run dev` and look at a profile's Overview and record lists. UI-5 (medications, lab results, timeline) is next. Phases 14 to 16 follow.
 
 Decisions the owner must make later:
 

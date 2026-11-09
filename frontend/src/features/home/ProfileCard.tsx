@@ -27,7 +27,7 @@ export function ageText(dateOfBirth: string | null, today: Date = new Date()): s
   return years === 1 ? '1 year' : `${years} years`
 }
 
-const ACCESS: Record<AccessLevel, { label: string; tone: BadgeTone }> = {
+export const ACCESS_BADGE: Record<AccessLevel, { label: string; tone: BadgeTone }> = {
   MANAGE: { label: 'You manage', tone: 'brand' },
   EDIT: { label: 'You can edit', tone: 'info' },
   VIEW: { label: 'View only', tone: 'neutral' },
@@ -36,7 +36,7 @@ const ACCESS: Record<AccessLevel, { label: string; tone: BadgeTone }> = {
 /** One person on Home. The whole card opens their profile. */
 export function ProfileCard({ profile }: { profile: Profile }) {
   const age = ageText(profile.dateOfBirth)
-  const access = ACCESS[profile.accessLevel]
+  const access = ACCESS_BADGE[profile.accessLevel]
 
   return (
     <Link

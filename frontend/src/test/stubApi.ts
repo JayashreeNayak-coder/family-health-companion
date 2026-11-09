@@ -44,12 +44,13 @@ export function stubApi(routes: Record<string, Reply | Reply[]>) {
   return stub
 }
 
-/** Record lists also load their attachments, and record forms the documents to cite. Both default to none. */
+/** Record lists, their attachments, and the documents a form can cite all default to none. */
 function defaultReplies(route: string): Reply[] | undefined {
   if (/^GET \/profiles\/[^/]+\/attachments\?recordType=[A-Z_]+$/.test(route)) {
     return [{ status: 200, body: [] }]
   }
-  if (/^GET \/profiles\/[^/]+\/documents\?size=100$/.test(route)) {
+  // Any profile's record list, such as the overview's, is empty unless a test says otherwise.
+  if (/^GET \/profiles\/[^/]+\/[a-z-]+\?size=100$/.test(route)) {
     return [page([])]
   }
   return undefined

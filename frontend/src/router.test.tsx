@@ -17,7 +17,8 @@ describe('router', () => {
     expect(parseRoute('/')).toEqual({ name: 'home' })
     expect(parseRoute('/sign-in')).toEqual({ name: 'signIn' })
     expect(parseRoute('/register')).toEqual({ name: 'register' })
-    expect(parseRoute('/profiles/p1')).toEqual({ name: 'profile', profileId: 'p1', section: 'details' })
+    expect(parseRoute('/profiles/p1')).toEqual({ name: 'profile', profileId: 'p1', section: 'overview' })
+    expect(parseRoute('/profiles/p1/details')).toEqual({ name: 'profile', profileId: 'p1', section: 'details' })
     expect(parseRoute('/profiles/p1/timeline/')).toEqual({ name: 'profile', profileId: 'p1', section: 'timeline' })
   })
 
@@ -30,6 +31,7 @@ describe('router', () => {
 
   it('buildsProfileAddressesThatParseBack', () => {
     expect(profilePath('p1')).toBe('/profiles/p1')
+    expect(profilePath('p1', 'details')).toBe('/profiles/p1/details')
     expect(profilePath('p1', 'labs')).toBe('/profiles/p1/labs')
     expect(parseRoute(profilePath('a/b', 'food'))).toEqual({ name: 'profile', profileId: 'a/b', section: 'food' })
   })

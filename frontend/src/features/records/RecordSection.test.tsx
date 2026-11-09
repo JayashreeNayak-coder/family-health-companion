@@ -38,7 +38,8 @@ describe('RecordSection', () => {
     renderAllergies()
 
     expect(screen.getByRole('status')).toHaveTextContent('Loading')
-    expect(await screen.findByText(/None recorded/)).toHaveTextContent("doesn't mean there are none")
+    expect(await screen.findByText('None recorded')).toBeInTheDocument()
+    expect(screen.getByText(/doesn't mean there are none/)).toBeInTheDocument()
   })
 
   it('showsALoadError', async () => {

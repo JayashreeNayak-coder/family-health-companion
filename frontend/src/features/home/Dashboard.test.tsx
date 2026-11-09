@@ -194,6 +194,11 @@ describe('Dashboard', () => {
     })
     await openProfileFromHome('Child Synthetic')
 
+    expect(await screen.findByText('No allergies recorded.')).toBeInTheDocument()
+    expect(screen.getByText('View only')).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Edit details' })).not.toBeInTheDocument()
+
+    fireEvent.click(within(screen.getByRole('navigation', { name: 'Profile sections' })).getByRole('link', { name: 'Details' }))
     expect(await screen.findByText(/view-only access/)).toBeInTheDocument()
     expect(screen.getByText('Not recorded')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Save details' })).not.toBeInTheDocument()
@@ -229,6 +234,8 @@ describe('Dashboard', () => {
       'GET /auth/me': signedIn,
     })
     await openProfileFromHome('Child Synthetic')
+    fireEvent.click(await screen.findByRole('link', { name: 'Edit details' }))
+    expect(window.location.pathname).toBe('/profiles/p1/details')
     await screen.findByRole('button', { name: 'Delete profile' })
 
     click('Delete profile')

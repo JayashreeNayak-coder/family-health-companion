@@ -63,7 +63,7 @@ describe('AppShell', () => {
     expect(within(tabs).getByRole('link', { name: 'Timeline' })).toHaveAttribute('aria-current', 'page')
   })
 
-  it('showsDetailsWhenANonManagerOpensTheAccessAddress', async () => {
+  it('showsTheOverviewWhenANonManagerOpensTheAccessAddress', async () => {
     stubApi({ 'GET /auth/me': signedIn, 'GET /profiles/p1': { status: 200, body: profile } })
     at('/profiles/p1/access')
 
@@ -71,7 +71,7 @@ describe('AppShell', () => {
 
     const tabs = await screen.findByRole('navigation', { name: 'Profile sections' })
     expect(within(tabs).queryByRole('link', { name: 'Access' })).not.toBeInTheDocument()
-    expect(within(tabs).getByRole('link', { name: 'Details' })).toHaveAttribute('aria-current', 'page')
+    expect(within(tabs).getByRole('link', { name: 'Overview' })).toHaveAttribute('aria-current', 'page')
   })
 
   it('showsNotFoundForAnUnknownAddress', async () => {
