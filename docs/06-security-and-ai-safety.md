@@ -117,7 +117,7 @@ To keep the table from being filled without signing in, three things aren't reco
 | Feature | Data sent to the provider | Safety behaviour |
 |---|---|---|
 | Document extraction | The document only | Draft stays separate until approved per item. Fields not found are `null`. If unreliable, the document is kept and no structured data is created. |
-| Voice transcription | Audio only; not kept after transcription | Text is returned for the user to edit |
+| Voice transcription (deferred, D-022) | Audio only; not kept after transcription | Text is returned for the user to edit |
 | Summary | Selected records in the chosen period, with dates and source types | Must cite source records. Reports gaps and conflicts. No interpretation. |
 | General meals | Ingredients and request text only | Uses no profile data, even if a member is selected in the UI |
 | Health-aware meals | Allergies, restrictions, and preferences for the selected profile; conditions only if the user confirms they're relevant | Discloses missing data. Never claims safety. |

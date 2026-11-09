@@ -42,7 +42,7 @@
 | 10 | Food log | Done |
 | 11 | Document upload and private storage, with attachments on records | Done |
 | 12 | AI layer, then extraction with review and approval | Done |
-| 13 | Voice transcription | Not started |
+| 13 | Voice transcription | Deferred by the owner (`DECISIONS.md`, D-022) |
 | 14 | General meal assistant | Not started |
 | 15 | Health-aware meal assistant | Not started |
 | 16 | Record-based summaries | Not started |
@@ -93,7 +93,7 @@
 1. **Owner:** confirm CI runs on GitHub (pushed on 2026-11-06).
 2. **Owner:** start the backend from PowerShell as in `README.md`, and try **Read with AI** on a synthetic prescription or lab report.
 3. **Owner:** review `DECISIONS.md`, D-019 and D-020. D-021 (free tier, synthetic data only) is confirmed.
-4. **Phase 13: voice transcription**, then Phases 14 to 16, all on the same provider.
+4. **UI/UX redesign:** audit and proposal presented 2026-11-09, waiting for the owner's approval. Phases 14 to 16 follow, on the same provider.
 
 Decisions the owner must make later:
 

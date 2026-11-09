@@ -41,7 +41,7 @@ It is a health-record management and support tool—not a diagnostic or treatmen
 
 ### 3.3 AI-Assisted Document Processing
 - Extract information from supported documents.
-- Transcribe user-provided voice notes into text.
+- ~~Transcribe user-provided voice notes into text.~~ Deferred by the owner on 2026-11-09 (`DECISIONS.md`, D-022). May return later.
 - Show extracted information as a draft for user review and correction.
 - Save extracted data as confirmed records only after user approval.
 - If extraction is unreliable, retain the original document without inventing structured data.
@@ -76,7 +76,7 @@ It is a health-record management and support tool—not a diagnostic or treatmen
 The assistant shall provide two modes:
 
 **General mode**
-- Generate recipes from text or voice-entered ingredients.
+- Generate recipes from text-entered ingredients. Voice entry is deferred (`DECISIONS.md`, D-022).
 - Consider cooking time and preferences when provided.
 - Respect allergies explicitly stated in the current request.
 - Does not automatically use a selected family member’s health profile.

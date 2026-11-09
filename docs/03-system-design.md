@@ -140,7 +140,7 @@ The AI provider must not be called directly from frontend code. API keys stay on
 | Timeline | Working, based on database records |
 | Document upload | Working with private storage |
 | AI document extraction | Working, review before saving |
-| Voice transcription | Working, text returned for user editing |
+| Voice transcription | Deferred (`DECISIONS.md`, D-022) |
 | Medication tracking | Working |
 | Lab history | Working, basic trends |
 | Food/symptom logs | Working |
@@ -284,7 +284,7 @@ This list shows the order of work. `PROJECT_STATUS.md` keeps the original phase 
 10. Food log.
 11. Document upload and private storage.
 12. AI layer, then extraction with review and approval.
-13. Voice transcription.
+13. ~~Voice transcription.~~ Deferred (`DECISIONS.md`, D-022).
 14. General meal assistant.
 15. Health-aware meal assistant.
 16. Record-based summaries.

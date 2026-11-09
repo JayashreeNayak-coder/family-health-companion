@@ -200,7 +200,7 @@ Document content is never available through a public or storage URL. Responses u
 
 | Method | Path | Purpose | Access |
 |---|---|---|---|
-| POST | `/ai/transcriptions` | Voice note to text, returned for user editing | Signed in |
+| POST | `/ai/transcriptions` | Deferred (`DECISIONS.md`, D-022). Not implemented. | Signed in |
 | POST | `/meal-assistant/general` | General recipes; uses no profile data | Signed in |
 | POST | `/profiles/{id}/meal-assistant/health-aware` | Uses that profile's relevant data | `VIEW` |
 | POST | `/profiles/{id}/recipes` | Save a recipe | `EDIT` |
