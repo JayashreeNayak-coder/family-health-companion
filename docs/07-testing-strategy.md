@@ -129,5 +129,5 @@ Coverage is reported, but no percentage target is enforced. The authorization ma
 
 ## 7. Resolved review questions
 
-- Playwright end-to-end tests are added in Phase 19.
+- Playwright screenshot checks exist since UI-1 (`npm run screenshots`). End-to-end journeys are added in Phase 19.
 - Real AI safety runs are manual, before each demo and each prompt or model change.
