@@ -1,7 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type PointerEvent } from 'react'
 import { errorMessage } from '../../api/client'
 import { getTrend, listTrendSeries, type Trend, type TrendSeries } from '../../api/labs'
-import { Card, ErrorNote, inputClass } from '../../components/ui'
+import { Card } from '../../components/Card'
+import { EmptyState, ErrorNote, Loading } from '../../components/Feedback'
+import { inputClass } from '../../components/formStyles'
 
 type Props = { profileId: string }
 
@@ -68,17 +70,15 @@ export function LabTrendsPanel({ profileId }: Props) {
   }, [profileId, current])
 
   return (
-    <Card title="Lab trends">
+    <Card title="Lab trends" description="Values over time for one test and unit, exactly as recorded.">
       <ErrorNote message={error} />
-      {!series && !error && <p role="status">Loading…</p>}
+      {!series && !error && <Loading lines={3} />}
       {series && series.length === 0 && (
-        <p className="text-sm text-slate-600">
-          A trend needs lab results with a number and a date.
-        </p>
+        <EmptyState title="No trends yet">A trend needs lab results with a number and a date.</EmptyState>
       )}
       {series && series.length > 0 && (
         <>
-          <label className="block text-sm font-medium">
+          <label className="block max-w-md text-sm font-medium text-slate-800">
             Test
             <select
               className={inputClass}
@@ -104,31 +104,44 @@ export function LabTrendsPanel({ profileId }: Props) {
 
 function TrendView({ name, trend }: { name: string; trend: Trend }) {
   const unit = unitLabel(trend.unit)
+  const latest = trend.points[trend.points.length - 1]
   return (
-    <div className="mt-4 space-y-3">
-      <h4 className="font-medium">
-        {name} <span className="font-normal text-slate-600">({unit})</span>
-      </h4>
+    <div className="mt-5 space-y-4">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <h4 className="font-semibold text-slate-900">
+          {name} <span className="font-normal text-slate-500">({unit})</span>
+        </h4>
+        {latest && (
+          <p className="text-right text-sm text-slate-600">
+            Latest{' '}
+            <span className="text-xl font-semibold text-slate-900 tabular-nums">{latest.value}</span>
+            {trend.unit && <span className="text-slate-700"> {trend.unit}</span>}
+            <span className="block text-xs text-slate-500">on {latest.resultOn}</span>
+          </p>
+        )}
+      </div>
       {trend.points.length >= 2 && <LineChart trend={trend} name={name} />}
-      <table className="w-full text-left text-sm">
-        <caption className="sr-only">
-          {name} values in {unit}, oldest first
-        </caption>
-        <thead>
-          <tr className="border-b border-slate-200 text-slate-600">
-            <th className="py-1 font-medium">Date</th>
-            <th className="py-1 font-medium">Value ({unit})</th>
-          </tr>
-        </thead>
-        <tbody>
-          {trend.points.map((point) => (
-            <tr key={point.id} className="border-b border-slate-100">
-              <td className="py-1">{point.resultOn}</td>
-              <td className="py-1 tabular-nums">{point.value}</td>
+      <div className="overflow-x-auto">
+        <table className="w-full text-left text-sm">
+          <caption className="sr-only">
+            {name} values in {unit}, oldest first
+          </caption>
+          <thead>
+            <tr className="border-b border-slate-200 text-xs text-slate-500">
+              <th className="py-2 font-medium">Date</th>
+              <th className="py-2 text-right font-medium">Value ({unit})</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {trend.points.map((point) => (
+              <tr key={point.id} className="border-b border-slate-100 last:border-0">
+                <td className="py-2 text-slate-700">{point.resultOn}</td>
+                <td className="py-2 text-right text-slate-900 tabular-nums">{point.value}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
       {trend.excludedCount > 0 && (
         <p className="text-sm text-slate-600">
           {trend.excludedCount} other {trend.excludedCount === 1 ? 'result' : 'results'} for this test
@@ -140,12 +153,22 @@ function TrendView({ name, trend }: { name: string; trend: Trend }) {
   )
 }
 
-const WIDTH = 560
-const HEIGHT = 200
-const PAD = { top: 16, right: 16, bottom: 28, left: 56 }
+const WIDTH = 640
+const HEIGHT = 220
+const PAD = { top: 16, right: 20, bottom: 28, left: 52 }
 
-/** One series, so no legend: the heading names it. Hover a point for its date and value. */
+/** Three evenly spaced gridline values across the range, rounded for reading. */
+function gridValues(min: number, max: number): number[] {
+  return [min, (min + max) / 2, max].map((value) => Number(value.toPrecision(4)))
+}
+
+/**
+ * One series, so no legend: the heading names it. No reference band or colour says whether a
+ * value is good or bad, because interpretation is for a clinician. Hover anywhere on the plot:
+ * the crosshair snaps to the nearest date. The table below is the accessible view of every value.
+ */
 function LineChart({ trend, name }: { trend: Trend; name: string }) {
+  const [active, setActive] = useState<number | null>(null)
   const times = trend.points.map((point) => Date.parse(point.resultOn))
   const values = trend.points.map((point) => point.value)
   const [minTime, maxTime] = [Math.min(...times), Math.max(...times)]
@@ -164,57 +187,105 @@ function LineChart({ trend, name }: { trend: Trend; name: string }) {
   const first = trend.points[0]
   const last = trend.points[trend.points.length - 1]
 
+  function handleMove(event: PointerEvent<SVGRectElement>) {
+    const box = event.currentTarget.ownerSVGElement?.getBoundingClientRect()
+    if (!box || box.width === 0) {
+      return
+    }
+    const pointerX = ((event.clientX - box.left) / box.width) * WIDTH
+    let nearest = 0
+    times.forEach((time, index) => {
+      if (Math.abs(x(time) - pointerX) < Math.abs(x(times[nearest]) - pointerX)) {
+        nearest = index
+      }
+    })
+    setActive(nearest)
+  }
+
+  const point = active === null ? null : trend.points[active]
+  const pointX = active === null ? 0 : x(times[active])
+
   return (
-    <svg
-      viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
-      className="w-full max-w-xl"
-      role="img"
-      aria-label={`${name} from ${first.resultOn} to ${last.resultOn}. The table below lists every value.`}
-    >
-      {[minValue, maxValue].map((value) => (
-        <g key={value}>
+    <div className="relative w-full max-w-2xl">
+      <svg
+        viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
+        className="w-full touch-pan-y"
+        role="img"
+        aria-label={`${name} from ${first.resultOn} to ${last.resultOn}. The table below lists every value.`}
+      >
+        {gridValues(minValue, maxValue).map((value) => (
+          <g key={value}>
+            <line x1={PAD.left} x2={WIDTH - PAD.right} y1={y(value)} y2={y(value)} className="stroke-slate-200" />
+            <text
+              x={PAD.left - 8}
+              y={y(value)}
+              textAnchor="end"
+              dominantBaseline="middle"
+              className="fill-slate-500 text-[11px] tabular-nums"
+            >
+              {value}
+            </text>
+          </g>
+        ))}
+        <text x={PAD.left} y={HEIGHT - 8} className="fill-slate-500 text-[11px]">
+          {first.resultOn}
+        </text>
+        <text x={WIDTH - PAD.right} y={HEIGHT - 8} textAnchor="end" className="fill-slate-500 text-[11px]">
+          {last.resultOn}
+        </text>
+        {point && (
           <line
-            x1={PAD.left}
-            x2={WIDTH - PAD.right}
-            y1={y(value)}
-            y2={y(value)}
-            className="stroke-slate-200"
+            x1={pointX}
+            x2={pointX}
+            y1={PAD.top}
+            y2={HEIGHT - PAD.bottom}
+            strokeDasharray="3 3"
+            className="stroke-slate-400"
           />
-          <text
-            x={PAD.left - 8}
-            y={y(value)}
-            textAnchor="end"
-            dominantBaseline="middle"
-            className="fill-slate-500 text-[11px]"
-          >
-            {Number(value.toFixed(3))}
-          </text>
-        </g>
-      ))}
-      <text x={PAD.left} y={HEIGHT - 8} className="fill-slate-500 text-[11px]">
-        {first.resultOn}
-      </text>
-      <text x={WIDTH - PAD.right} y={HEIGHT - 8} textAnchor="end" className="fill-slate-500 text-[11px]">
-        {last.resultOn}
-      </text>
-      <path d={path} fill="none" strokeWidth={2} strokeLinejoin="round" className="stroke-teal-700" />
-      {trend.points.map((point, index) => (
-        <g key={point.id}>
+        )}
+        <path
+          d={path}
+          fill="none"
+          strokeWidth={2}
+          strokeLinejoin="round"
+          strokeLinecap="round"
+          className="stroke-brand-600"
+        />
+        {trend.points.map((item, index) => (
           <circle
+            key={item.id}
             cx={x(times[index])}
-            cy={y(point.value)}
-            r={4}
+            cy={y(item.value)}
+            r={active === index ? 6 : 4}
             strokeWidth={2}
-            className="fill-teal-700 stroke-white"
+            className="fill-brand-600 stroke-white"
           />
-          {/* A larger invisible target, so the tooltip is easy to reach. */}
-          <circle cx={x(times[index])} cy={y(point.value)} r={12} fill="transparent">
-            <title>
-              {point.resultOn}: {point.value} {trend.unit ?? ''}
-            </title>
-          </circle>
-        </g>
-      ))}
-    </svg>
+        ))}
+        {/* The whole plot is the hit target, so the reader aims at a date, not a 2px line. */}
+        <rect
+          x={PAD.left - 12}
+          y={0}
+          width={WIDTH - PAD.left - PAD.right + 24}
+          height={HEIGHT - PAD.bottom}
+          fill="transparent"
+          onPointerMove={handleMove}
+          onPointerDown={handleMove}
+          onPointerLeave={() => setActive(null)}
+        />
+      </svg>
+      {point && (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute top-0 z-10 -translate-x-1/2 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs whitespace-nowrap shadow-md"
+          style={{ left: `${Math.min(Math.max((pointX / WIDTH) * 100, 12), 88)}%` }}
+        >
+          <span className="block text-slate-500">{point.resultOn}</span>
+          <span className="font-semibold text-slate-900 tabular-nums">
+            {point.value}
+            {trend.unit ? ` ${trend.unit}` : ''}
+          </span>
+        </div>
+      )}
+    </div>
   )
 }

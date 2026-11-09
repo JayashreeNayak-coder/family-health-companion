@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { App } from '../../App'
 import { page, problem, stubApi } from '../../test/stubApi'
@@ -92,7 +92,8 @@ describe('AppShell', () => {
     render(<App />)
 
     expect(await screen.findByText('Welcome, Sam Synthetic')).toBeInTheDocument()
-    expect(window.location.pathname).toBe('/')
+    // The redirect runs in an effect just after the first render.
+    await waitFor(() => expect(window.location.pathname).toBe('/'))
   })
 
   it('keepsTheRequestedAddressThroughSignIn', async () => {
@@ -162,6 +163,64 @@ describe('AppShell', () => {
     })
     expect(window.location.pathname).toBe('/profiles/p1')
     expect(screen.queryByRole('dialog', { name: 'Menu' })).not.toBeInTheDocument()
+  })
+
+  it('namesTheBrowserTabAfterEachPage', async () => {
+    stubApi({
+      'GET /auth/me': signedIn,
+      'GET /profiles/p1': { status: 200, body: profile },
+    })
+    at('/profiles/p1/labs')
+
+    render(<App />)
+
+    await screen.findByRole('heading', { level: 1, name: 'Child Synthetic' })
+    expect(document.title).toBe('Child Synthetic · Lab results · Family Health Companion')
+    fireEvent.click(within(screen.getByRole('navigation', { name: 'Main' })).getByRole('link', { name: 'Home' }))
+    await screen.findByText('Welcome, Sam Synthetic')
+    expect(document.title).toBe('Home · Family Health Companion')
+  })
+
+  it('movesFocusToTheNewPageButKeepsItOnTheTabsWithinAProfile', async () => {
+    stubApi({
+      'GET /auth/me': signedIn,
+      'GET /profiles?size=100': page([profile]),
+      'GET /profiles/p1': { status: 200, body: profile },
+    })
+
+    render(<App />)
+    await screen.findByText('Welcome, Sam Synthetic')
+    expect(screen.getByRole('main')).not.toHaveFocus()
+
+    fireEvent.click(await within(screen.getByRole('navigation', { name: 'Main' })).findByRole('link', { name: 'Child Synthetic' }))
+    expect(screen.getByRole('main')).toHaveFocus()
+
+    const tabs = await screen.findByRole('navigation', { name: 'Profile sections' })
+    const timeline = within(tabs).getByRole('link', { name: 'Timeline' })
+    timeline.focus()
+    fireEvent.click(timeline)
+    expect(timeline).toHaveFocus()
+  })
+
+  it('keepsFocusInsideThePhoneMenuAndReturnsItOnClose', async () => {
+    stubApi({ 'GET /auth/me': signedIn })
+
+    render(<App />)
+    await screen.findByText('Welcome, Sam Synthetic')
+    const opener = screen.getByRole('button', { name: 'Open menu' })
+    fireEvent.click(opener)
+    const menu = screen.getByRole('dialog', { name: 'Menu' })
+    const close = within(menu).getByRole('button', { name: 'Close menu' })
+    const signOut = within(menu).getByRole('button', { name: 'Sign out' })
+
+    signOut.focus()
+    fireEvent.keyDown(signOut, { key: 'Tab' })
+    expect(close).toHaveFocus()
+    fireEvent.keyDown(close, { key: 'Tab', shiftKey: true })
+    expect(signOut).toHaveFocus()
+
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(opener).toHaveFocus()
   })
 
   it('makesInitialsFromAName', () => {

@@ -17,6 +17,8 @@ export default defineConfig({
     colorScheme: 'light',
   },
   projects: [
+    // WCAG 1.4.10 reflow: content must work at 320 CSS pixels without sideways scrolling.
+    { name: 'narrow', use: { browserName: 'chromium', viewport: { width: 320, height: 640 }, isMobile: true, hasTouch: true } },
     { name: 'phone', use: { browserName: 'chromium', viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true } },
     { name: 'tablet', use: { browserName: 'chromium', viewport: { width: 768, height: 1024 } } },
     { name: 'desktop', use: { browserName: 'chromium', viewport: { width: 1280, height: 800 } } },

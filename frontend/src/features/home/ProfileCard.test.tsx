@@ -60,13 +60,13 @@ describe('Home overview', () => {
     render(<Dashboard />)
 
     const familySection = await screen.findByRole('region', { name: 'Synthetic Family' })
-    const card = within(familySection).getByRole('link', { name: 'Sam Synthetic' })
+    const card = within(familySection).getByRole('link', { name: 'Sam Synthetic' }).closest('li')!
     expect(card).toHaveTextContent('Age not recorded')
     expect(card).toHaveTextContent('Has own account')
     expect(await within(familySection).findByText('Family members · 2')).toBeInTheDocument()
     expect(within(familySection).getByText('kim@example.test')).toBeInTheDocument()
 
     const shared = screen.getByRole('region', { name: 'Shared with you' })
-    expect(within(shared).getByRole('link', { name: 'Grandma Synthetic' })).toHaveTextContent('View only')
+    expect(within(shared).getByRole('link', { name: 'Grandma Synthetic' }).closest('li')).toHaveTextContent('View only')
   })
 })

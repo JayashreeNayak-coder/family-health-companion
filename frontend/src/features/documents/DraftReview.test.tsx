@@ -160,7 +160,7 @@ describe('ExtractionControls', () => {
     })
     render(<DocumentsPanel profileId="p1" canEdit canManage={false} />)
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Read report.png with AI' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Read with AI: report.png' }))
 
     expect(await screen.findByRole('alert')).toHaveTextContent('enter the details by hand')
   })
@@ -178,6 +178,6 @@ describe('ExtractionControls', () => {
     expect(await screen.findByText(/couldn't read this as a health document/)).toHaveTextContent(
       'The document is kept',
     )
-    expect(screen.getByRole('button', { name: 'Read report.png with AI' })).toHaveTextContent('again')
+    expect(screen.getByRole('button', { name: 'Read with AI again: report.png' })).toBeInTheDocument()
   })
 })

@@ -1,14 +1,10 @@
 import { useState, type FormEvent } from 'react'
 import { errorMessage } from '../../api/client'
 import { deleteProfile, updateProfile, type Profile } from '../../api/profiles'
-import {
-  Card,
-  dangerButtonClass,
-  ErrorNote,
-  inputClass,
-  Missing,
-  primaryButtonClass,
-} from '../../components/ui'
+import { buttonClass } from '../../components/Button'
+import { Card } from '../../components/Card'
+import { ErrorNote, Missing } from '../../components/Feedback'
+import { inputClass } from '../../components/formStyles'
 import { useConfirm } from '../../components/Dialog'
 
 type Props = {
@@ -98,11 +94,11 @@ export function DetailsPanel({ profile, onSaved, onDeleted }: Props) {
         </label>
         <ErrorNote message={error} />
         <div className="flex items-center justify-between">
-          <button type="submit" disabled={busy} className={primaryButtonClass}>
+          <button type="submit" disabled={busy} className={buttonClass('primary', 'md')}>
             Save details
           </button>
           {profile.accessLevel === 'MANAGE' && (
-            <button type="button" disabled={busy} onClick={handleDelete} className={dangerButtonClass}>
+            <button type="button" disabled={busy} onClick={handleDelete} className={buttonClass('danger', 'sm')}>
               Delete profile
             </button>
           )}

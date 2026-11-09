@@ -28,6 +28,24 @@ describe('DocumentsPanel', () => {
     vi.restoreAllMocks()
   })
 
+  it('labelsWhereTheAiIsWithEachDocument', async () => {
+    stubApi({
+      [LIST]: page([
+        { ...document, id: 'd1', description: 'Never read', extractionStatus: 'NOT_REQUESTED' },
+        { ...document, id: 'd2', description: 'Draft waiting', extractionStatus: 'READY_FOR_REVIEW' },
+        { ...document, id: 'd3', description: 'Already reviewed', extractionStatus: 'REVIEWED' },
+      ]),
+    })
+
+    render(<DocumentsPanel profileId="p1" canEdit canManage={false} />)
+
+    const item = async (name: string) => (await screen.findByText(name)).closest('li')!
+    expect(within(await item('Draft waiting')).getByText('Draft ready to review')).toBeInTheDocument()
+    expect(within(await item('Draft waiting')).getByRole('button', { name: 'Review AI draft' })).toBeInTheDocument()
+    expect(within(await item('Already reviewed')).getByText('AI draft reviewed')).toBeInTheDocument()
+    expect(within(await item('Never read')).queryByText(/AI draft|Draft ready/)).not.toBeInTheDocument()
+  })
+
   it('listsDocumentsWithTheirTypeAndAMissingDate', async () => {
     stubApi({ [LIST]: page([document]) })
 
@@ -120,7 +138,7 @@ describe('DocumentsPanel', () => {
     })
     render(<DocumentsPanel profileId="p1" canEdit={false} canManage={false} />)
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Open prescription.jpg' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'View prescription.jpg' }))
 
     expect(await screen.findByRole('img', { name: 'Synthetic prescription' })).toHaveAttribute(
       'src',

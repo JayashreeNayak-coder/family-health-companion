@@ -2,7 +2,10 @@ import { useEffect, useState } from 'react'
 import { errorMessage } from '../../api/client'
 import { getFamily, type FamilyMember } from '../../api/families'
 import { deleteGrant, listGrants, putGrant, type AccessLevel, type Grant, type Profile } from '../../api/profiles'
-import { Card, compactSelectClass, dangerButtonClass, ErrorNote, inputClass } from '../../components/ui'
+import { buttonClass } from '../../components/Button'
+import { Card } from '../../components/Card'
+import { ErrorNote } from '../../components/Feedback'
+import { compactSelectClass, inputClass } from '../../components/formStyles'
 
 const LEVELS: { value: AccessLevel; label: string }[] = [
   { value: 'VIEW', label: 'View' },
@@ -87,7 +90,7 @@ export function AccessPanel({ profile }: { profile: Profile }) {
                 </select>
                 <button
                   type="button"
-                  className={dangerButtonClass}
+                  className={buttonClass('danger', 'sm')}
                   onClick={() => void run(() => deleteGrant(profile.id, grant.accountId))}
                 >
                   Remove

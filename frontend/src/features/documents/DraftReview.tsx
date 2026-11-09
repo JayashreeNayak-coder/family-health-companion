@@ -1,3 +1,4 @@
+import { Check, CircleCheck, CircleX, X } from 'lucide-react'
 import { useEffect, useState, type FormEvent } from 'react'
 import { ApiError, errorMessage, type FieldError } from '../../api/client'
 import type { HealthDocument } from '../../api/documents'
@@ -10,12 +11,11 @@ import {
   type DraftItem,
   type DraftItemType,
 } from '../../api/extraction'
-import {
-  ErrorNote,
-  inputClass,
-  primaryButtonClass,
-  secondaryButtonClass,
-} from '../../components/ui'
+import { AiBadge } from '../../components/Badge'
+import { Button } from '../../components/Button'
+import { useConfirm } from '../../components/Dialog'
+import { ErrorNote, Loading } from '../../components/Feedback'
+import { inputClass } from '../../components/formStyles'
 import {
   ALLERGIES,
   CONDITIONS,
@@ -25,8 +25,6 @@ import {
   type ResourceConfig,
 } from '../records/resources'
 import { DocumentView } from './DocumentView'
-import { useConfirm } from '../../components/Dialog'
-import { AiBadge } from '../../components/Badge'
 
 const RESOURCES: Record<DraftItemType, ResourceConfig> = {
   MEDICATION: MEDICATIONS,
@@ -96,50 +94,77 @@ export function DraftReview({ profileId, document, onClose }: Props) {
   }
 
   const pending = draft?.items.filter((item) => item.status === 'PENDING').length ?? 0
+  const total = draft?.items.length ?? 0
 
   return (
-    <div className="mt-3 space-y-3 rounded-xl border border-violet-200 bg-violet-50/60 p-4">
+    <section
+      aria-label="AI draft review"
+      className="mt-4 space-y-4 rounded-2xl border border-violet-200 bg-violet-50/50 p-4 sm:p-5"
+    >
       {confirmDialog}
-      <div className="flex flex-wrap items-center gap-2">
-        <AiBadge>AI generated · needs review</AiBadge>
-        <h4 className="font-semibold">Review the extracted details</h4>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <AiBadge>AI generated · needs review</AiBadge>
+          <h4 className="font-semibold text-slate-900">Review the extracted details</h4>
+        </div>
+        {draft && total > 0 && (
+          <p className="text-sm text-slate-600">
+            {total - pending} of {total} reviewed
+          </p>
+        )}
       </div>
       <ErrorNote message={error} />
-      {!draft && !error && <p role="status">Loading…</p>}
+      {!draft && !error && <Loading />}
       {draft && (
         <>
-          <p className="text-sm">{draft.disclaimer}</p>
-          <ul className="list-disc pl-5 text-sm text-slate-700">
-            {draft.limitations.map((limitation) => (
-              <li key={limitation}>{limitation}</li>
-            ))}
-          </ul>
-          <div className="rounded bg-white p-2">
-            <p className="text-sm font-medium">Original document</p>
-            <DocumentView profileId={profileId} document={document} />
-          </div>
-          {draft.items.map((item) => (
-            <DraftItemCard
-              key={item.id}
-              profileId={profileId}
-              documentId={document.id}
-              item={item}
-              onChanged={replaceItem}
-            />
-          ))}
-          <div className="flex flex-wrap gap-2">
-            {pending > 0 && (
-              <button type="button" className={secondaryButtonClass} onClick={() => void discardRest()}>
-                Discard the {pending} remaining {pending === 1 ? 'item' : 'items'}
-              </button>
+          <div className="rounded-xl border border-violet-100 bg-white px-4 py-3 text-sm text-slate-700">
+            <p className="font-medium text-slate-900">{draft.disclaimer}</p>
+            {draft.limitations.length > 0 && (
+              <ul className="mt-2 list-disc space-y-1 pl-5">
+                {draft.limitations.map((limitation) => (
+                  <li key={limitation}>{limitation}</li>
+                ))}
+              </ul>
             )}
-            <button type="button" className={secondaryButtonClass} onClick={onClose}>
+          </div>
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+            <div className="self-start rounded-xl border border-slate-200 bg-white p-4 lg:sticky lg:top-4">
+              <p className="mb-2 text-sm font-semibold text-slate-800">Original document</p>
+              <p className="mb-3 text-xs break-all text-slate-500">{document.originalFilename}</p>
+              <div className="flex flex-wrap gap-2">
+                <DocumentView profileId={profileId} document={document} />
+              </div>
+            </div>
+            <div className="space-y-3">
+              {draft.items.length === 0 && (
+                <p className="rounded-xl bg-white p-4 text-sm text-slate-600">
+                  The AI found nothing to draft from this document.
+                </p>
+              )}
+              {draft.items.map((item) => (
+                <DraftItemCard
+                  key={item.id}
+                  profileId={profileId}
+                  documentId={document.id}
+                  item={item}
+                  onChanged={replaceItem}
+                />
+              ))}
+            </div>
+          </div>
+          <div className="flex flex-wrap justify-end gap-2 border-t border-violet-100 pt-4">
+            {pending > 0 && (
+              <Button onClick={() => void discardRest()}>
+                Discard the {pending} remaining {pending === 1 ? 'item' : 'items'}
+              </Button>
+            )}
+            <Button variant={pending > 0 ? 'secondary' : 'primary'} onClick={onClose}>
               {pending > 0 ? 'Finish later' : 'Done'}
-            </button>
+            </Button>
           </div>
         </>
       )}
-    </div>
+    </section>
   )
 }
 
@@ -171,10 +196,19 @@ function DraftItemCard({
   const title = `${resource.singular[0].toUpperCase()}${resource.singular.slice(1)}`
 
   if (item.status !== 'PENDING') {
+    const approved = item.status === 'APPROVED'
+    const Icon = approved ? CircleCheck : CircleX
     return (
-      <div className="rounded bg-white p-3 text-sm">
-        <strong>{title}:</strong> {String(item.payload[resource.titleField] ?? '')} —{' '}
-        {item.status === 'APPROVED' ? 'saved as a record (from document)' : 'discarded'}
+      <div className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm">
+        <Icon aria-hidden="true" className={`mt-0.5 size-5 shrink-0 ${approved ? 'text-emerald-600' : 'text-slate-400'}`} />
+        <div className="min-w-0">
+          <p className="font-medium break-words text-slate-900">
+            {title}: {String(item.payload[resource.titleField] ?? '')}
+          </p>
+          <p className="text-slate-600">
+            {approved ? 'Approved and saved as a record (from document).' : 'This item was discarded. Nothing from it was saved.'}
+          </p>
+        </div>
       </div>
     )
   }
@@ -220,45 +254,54 @@ function DraftItemCard({
     <form
       onSubmit={approve}
       aria-label={`Draft ${resource.singular}`}
-      className="space-y-2 rounded bg-white p-3"
+      className="rounded-xl border border-violet-200 bg-white p-4 shadow-xs"
     >
-      <p className="font-medium">{title}</p>
-      {fields.map((field) => {
-        const fieldError = fieldErrors.find((candidate) => candidate.field === field.name)
-        const shared = {
-          className: inputClass,
-          value: values[field.name],
-          maxLength: field.maxLength,
-          onChange: (event: { target: { value: string } }) =>
-            setValues((current) => ({ ...current, [field.name]: event.target.value })),
-        }
-        return (
-          <label key={field.name} className="block text-sm font-medium">
-            {field.label}
-            {values[field.name] === '' && (
-              <span className="ml-1 font-normal text-slate-500 italic">(not found in the document)</span>
-            )}
-            {field.type === 'textarea' ? (
-              <textarea rows={2} {...shared} />
-            ) : (
-              <input
-                type={field.type === 'select' ? 'text' : (field.type ?? 'text')}
-                step={field.type === 'number' ? 'any' : undefined}
-                {...shared}
-              />
-            )}
-            {fieldError && <span className="block text-red-800">{fieldError.message}</span>}
-          </label>
-        )
-      })}
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <p className="font-semibold text-slate-900">{title}</p>
+        <AiBadge>AI draft</AiBadge>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        {fields.map((field) => {
+          const fieldError = fieldErrors.find((candidate) => candidate.field === field.name)
+          const missing = values[field.name] === ''
+          const shared = {
+            className: `${inputClass} ${missing ? 'border-dashed' : ''}`,
+            value: values[field.name],
+            maxLength: field.maxLength,
+            onChange: (event: { target: { value: string } }) =>
+              setValues((current) => ({ ...current, [field.name]: event.target.value })),
+          }
+          return (
+            <label
+              key={field.name}
+              className={`block text-sm font-medium text-slate-800 ${field.type === 'textarea' ? 'sm:col-span-2' : ''}`}
+            >
+              {field.label}
+              {missing && (
+                <span className="ml-1 font-normal text-slate-500 italic">(not found in the document)</span>
+              )}
+              {field.type === 'textarea' ? (
+                <textarea rows={2} {...shared} />
+              ) : (
+                <input
+                  type={field.type === 'select' ? 'text' : (field.type ?? 'text')}
+                  step={field.type === 'number' ? 'any' : undefined}
+                  {...shared}
+                />
+              )}
+              {fieldError && <span className="mt-1 block font-normal text-red-700">{fieldError.message}</span>}
+            </label>
+          )
+        })}
+      </div>
       <ErrorNote message={error} />
-      <div className="flex flex-wrap gap-2">
-        <button type="submit" disabled={busy} className={primaryButtonClass}>
-          Approve and save
-        </button>
-        <button type="button" disabled={busy} className={secondaryButtonClass} onClick={() => void reject()}>
+      <div className="mt-4 flex flex-wrap justify-end gap-2">
+        <Button icon={X} disabled={busy} onClick={() => void reject()}>
           Discard
-        </button>
+        </Button>
+        <Button type="submit" variant="primary" icon={Check} busy={busy}>
+          Approve and save
+        </Button>
       </div>
     </form>
   )

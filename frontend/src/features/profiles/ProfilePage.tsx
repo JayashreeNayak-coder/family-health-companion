@@ -4,6 +4,7 @@ import { getProfile, type Profile } from '../../api/profiles'
 import { ChevronRight, Pencil } from 'lucide-react'
 import { Badge } from '../../components/Badge'
 import { buttonClass } from '../../components/Button'
+import { useDocumentTitle } from '../../components/useDocumentTitle'
 import { ErrorNote, Loading } from '../../components/Feedback'
 import { Link, navigate, profilePath, type ProfileSection } from '../../router'
 import { ACCESS_BADGE, ageText } from '../home/ProfileCard'
@@ -75,6 +76,8 @@ export function ProfilePage({ profileId, section: tab }: Props) {
 
   // The Access tab exists only for managers. Anyone else at its address sees the overview.
   const shown: ProfileSection = profile && !tabs.some((item) => item.id === tab) ? 'overview' : tab
+
+  useDocumentTitle(profile?.fullName ?? 'Profile', tabs.find((item) => item.id === shown)?.label)
 
   function handleSaved(saved: Profile) {
     setProfile(saved)

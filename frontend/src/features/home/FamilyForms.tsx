@@ -14,7 +14,7 @@ import {
 import { createProfile, type Profile, type ProfileKind } from '../../api/profiles'
 import { Button } from '../../components/Button'
 import { ErrorNote } from '../../components/Feedback'
-import { inputClass } from '../../components/ui'
+import { inputClass } from '../../components/formStyles'
 
 const labelClass = 'block text-sm font-medium text-slate-800'
 

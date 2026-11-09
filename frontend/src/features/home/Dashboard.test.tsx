@@ -97,8 +97,9 @@ describe('Dashboard', () => {
     type('Who is this for?', 'DEPENDENT')
     click('Add profile')
 
-    const card = await screen.findByRole('link', { name: 'Child Synthetic' })
-    expect(card).toHaveAttribute('href', '/profiles/p1')
+    const link = await screen.findByRole('link', { name: 'Child Synthetic' })
+    expect(link).toHaveAttribute('href', '/profiles/p1')
+    const card = link.closest('li')!
     expect(card).toHaveTextContent('Dependent')
     expect(card).toHaveTextContent('You manage')
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()

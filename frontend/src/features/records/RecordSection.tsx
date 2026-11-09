@@ -15,7 +15,7 @@ import { Card } from '../../components/Card'
 import { Dialog, useConfirm } from '../../components/Dialog'
 import { EmptyState, ErrorNote, Loading, Missing } from '../../components/Feedback'
 import { useToast } from '../../components/Toast'
-import { inputClass } from '../../components/ui'
+import { inputClass } from '../../components/formStyles'
 import { Attachments } from '../documents/Attachments'
 import type { FieldConfig, ResourceConfig } from './resources'
 

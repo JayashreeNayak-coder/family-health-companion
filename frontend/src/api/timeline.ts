@@ -1,7 +1,7 @@
 import { apiGet } from './client'
 import type { SourceType } from './records'
 
-export type TimelineType = 'CONDITION' | 'VISIT' | 'SYMPTOM' | 'MEDICATION'
+export type TimelineType = 'CONDITION' | 'VISIT' | 'SYMPTOM' | 'MEDICATION' | 'LAB_RESULT'
 
 export type TimelineEntry = {
   type: TimelineType

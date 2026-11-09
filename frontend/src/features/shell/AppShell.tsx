@@ -1,5 +1,5 @@
 import { HeartPulse, House, LogOut, Menu, X } from 'lucide-react'
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from 'react'
 import { logout, type Account } from '../../api/auth'
 import { ApiError } from '../../api/client'
 import { ErrorNote } from '../../components/Feedback'
@@ -123,6 +123,12 @@ function Navigation({
 export function AppShell({ account, onSignedOut, children }: Props) {
   const pathname = usePathname()
   const [menuOpen, setMenuOpen] = useState(false)
+  const main = useRef<HTMLElement>(null)
+  const menuButton = useRef<HTMLButtonElement>(null)
+  const route = useRoute()
+  // A profile's tabs are one page: switching tabs keeps focus on the tabs.
+  const page = route.name === 'profile' ? `profile:${route.profileId}` : pathname
+  const firstPage = useRef(page)
   const [signingOut, setSigningOut] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -133,6 +139,15 @@ export function AppShell({ account, onSignedOut, children }: Props) {
     setMenuOpen(false)
   }
 
+  // After following a link, focus moves to the new page so screen readers announce it.
+  // The first page load keeps the browser's own focus.
+  useEffect(() => {
+    if (page !== firstPage.current) {
+      firstPage.current = ''
+      main.current?.focus({ preventScroll: true })
+    }
+  }, [page])
+
   useEffect(() => {
     if (!menuOpen) {
       return
@@ -140,11 +155,36 @@ export function AppShell({ account, onSignedOut, children }: Props) {
     function onKey(event: KeyboardEvent) {
       if (event.key === 'Escape') {
         setMenuOpen(false)
+        menuButton.current?.focus()
       }
     }
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
   }, [menuOpen])
+
+  function closeMenu() {
+    setMenuOpen(false)
+    menuButton.current?.focus()
+  }
+
+  /** Tab stays inside the open menu, as in any modal dialog. */
+  function trapFocus(event: ReactKeyboardEvent<HTMLDivElement>) {
+    if (event.key !== 'Tab') {
+      return
+    }
+    const focusable = Array.from(
+      event.currentTarget.querySelectorAll<HTMLElement>('a[href], button:not([disabled])'),
+    )
+    const first = focusable[0]
+    const last = focusable[focusable.length - 1]
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault()
+      last.focus()
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault()
+      first.focus()
+    }
+  }
 
   async function handleSignOut() {
     setSigningOut(true)
@@ -183,6 +223,7 @@ export function AppShell({ account, onSignedOut, children }: Props) {
 
       <header className="sticky top-0 z-20 flex items-center gap-3 border-b border-slate-200 bg-white/95 px-4 py-3 backdrop-blur lg:hidden">
         <button
+          ref={menuButton}
           type="button"
           onClick={() => setMenuOpen(true)}
           aria-label="Open menu"
@@ -195,12 +236,18 @@ export function AppShell({ account, onSignedOut, children }: Props) {
       </header>
 
       {menuOpen && (
-        <div className="fixed inset-0 z-40 lg:hidden" role="dialog" aria-modal="true" aria-label="Menu">
-          <div className="absolute inset-0 bg-slate-900/50" onClick={() => setMenuOpen(false)} />
+        <div
+          className="fixed inset-0 z-40 lg:hidden"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Menu"
+          onKeyDown={trapFocus}
+        >
+          <div className="absolute inset-0 bg-slate-900/50" onClick={closeMenu} />
           <div className="absolute inset-y-0 left-0 w-72 max-w-[85vw] bg-sidebar shadow-xl">
             <button
               type="button"
-              onClick={() => setMenuOpen(false)}
+              onClick={closeMenu}
               aria-label="Close menu"
               autoFocus
               className="absolute top-4 right-3 grid size-9 place-items-center rounded-lg text-sidebar-text hover:bg-white/10"
@@ -212,7 +259,7 @@ export function AppShell({ account, onSignedOut, children }: Props) {
         </div>
       )}
 
-      <main id="main" className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 lg:px-10 lg:py-10">
+      <main id="main" ref={main} tabIndex={-1} className="focus:outline-none mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 lg:px-10 lg:py-10">
         {error && (
           <div className="mb-4">
             <ErrorNote message={error} />

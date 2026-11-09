@@ -1,3 +1,4 @@
+import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test'
 
 /**
@@ -79,6 +80,21 @@ async function seed(request: APIRequestContext) {
   expect(upload.ok()).toBeTruthy()
 }
 
+/** Runs the axe accessibility rules for WCAG 2.2 A and AA, and fails with a readable list. */
+async function accessible(page: Page, name: string) {
+  const results = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
+    .analyze()
+  const problems = results.violations.map(
+    (violation) =>
+      `${violation.id} (${violation.impact}): ${violation.help} -> ${violation.nodes
+        .slice(0, 3)
+        .map((node) => node.target.join(' '))
+        .join(' | ')}`,
+  )
+  expect.soft(problems, `${name} accessibility`).toEqual([])
+}
+
 async function shot(page: Page, name: string, projectName: string) {
   await page.waitForLoadState('networkidle')
   await expect(page.getByRole('status').filter({ hasText: 'Loading' })).toHaveCount(0)
@@ -86,6 +102,7 @@ async function shot(page: Page, name: string, projectName: string) {
   // The page itself must never scroll sideways, at any width.
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
   expect(overflow, `${name} is ${overflow}px wider than the screen`).toBeLessThanOrEqual(0)
+  await accessible(page, name)
 }
 
 test('captures every page', async ({ page }, info) => {
@@ -99,9 +116,10 @@ test('captures every page', async ({ page }, info) => {
   await page.getByRole('button', { name: 'Invite someone' }).click()
   await expect(page.getByRole('dialog')).toBeVisible()
   await page.screenshot({ path: `e2e/screenshots/${info.project.name}/02a-invite-dialog.png` })
+  await accessible(page, 'invite dialog')
   await page.keyboard.press('Escape')
 
-  if (info.project.name === 'phone') {
+  if (info.project.name === 'phone' || info.project.name === 'narrow') {
     await page.getByRole('button', { name: 'Open menu' }).click()
     await page.getByRole('dialog', { name: 'Menu' }).getByRole('link', { name: 'Ravi Demo' }).waitFor()
     await page.screenshot({ path: `e2e/screenshots/${info.project.name}/02b-phone-menu.png` })
@@ -126,6 +144,16 @@ test('captures every page', async ({ page }, info) => {
     await shot(page, `${String(index + 3).padStart(2, '0')}-profile-${tab.toLowerCase().replaceAll(' ', '-')}`, info.project.name)
   }
 
+  // The lab chart's hover readout.
+  await page.getByRole('navigation', { name: 'Profile sections' }).getByRole('link', { name: 'Lab results' }).click()
+  const chart = page.getByRole('img', { name: /HbA1c from/ })
+  await chart.scrollIntoViewIfNeeded()
+  const box = await chart.boundingBox()
+  if (box) {
+    await page.mouse.move(box.x + box.width * 0.55, box.y + box.height / 2)
+  }
+  await page.screenshot({ path: `e2e/screenshots/${info.project.name}/18-lab-chart-hover.png` })
+
   // A page address survives a refresh.
   await page.getByRole('navigation', { name: 'Profile sections' }).getByRole('link', { name: 'Health history' }).click()
   await page.reload()
@@ -133,6 +161,7 @@ test('captures every page', async ({ page }, info) => {
   await page.getByRole('button', { name: /^Edit Penicillin/ }).click()
   await expect(page.getByRole('dialog')).toBeVisible()
   await page.screenshot({ path: `e2e/screenshots/${info.project.name}/19-edit-dialog.png` })
+  await accessible(page, 'edit dialog')
   await page.keyboard.press('Escape')
   await page.getByRole('button', { name: /^Delete Penicillin/ }).click()
   await expect(page.getByRole('dialog')).toBeVisible()

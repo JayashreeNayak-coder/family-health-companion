@@ -8,15 +8,13 @@ import {
   type HealthDocument,
   type RecordType,
 } from '../../api/documents'
-import {
-  ErrorNote,
-  inputClass,
-  primaryButtonClass,
-  secondaryButtonClass,
-} from '../../components/ui'
+import { FolderOpen, Paperclip, Upload, X } from 'lucide-react'
+import { Button } from '../../components/Button'
+import { Dialog, useConfirm } from '../../components/Dialog'
+import { ErrorNote, Loading } from '../../components/Feedback'
+import { inputClass } from '../../components/formStyles'
 import { DocumentView } from './DocumentView'
 import { UploadForm } from './UploadForm'
-import { useConfirm } from '../../components/Dialog'
 
 type Props = {
   profileId: string
@@ -71,23 +69,29 @@ export function Attachments({
   }
 
   return (
-    <div className="mt-2 text-sm">
+    <div className="mt-3 text-sm">
       {confirmDialog}
       {attachments.length > 0 && (
-        <ul aria-label={`Attachments for ${recordTitle}`} className="space-y-1">
+        <ul aria-label={`Attachments for ${recordTitle}`} className="mb-2 space-y-2">
           {attachments.map((attachment) => (
-            <li key={attachment.id} className="flex flex-wrap items-center gap-2">
-              <span aria-hidden="true">📎</span>
-              <span>{attachment.document.description ?? attachment.document.originalFilename}</span>
+            <li
+              key={attachment.id}
+              className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-200 bg-slate-50/60 px-3 py-2"
+            >
+              <Paperclip aria-hidden="true" className="size-4 shrink-0 text-slate-500" />
+              <span className="min-w-0 flex-1 break-words text-slate-800">
+                {attachment.document.description ?? attachment.document.originalFilename}
+              </span>
               <DocumentView profileId={profileId} document={attachment.document} />
               {canEdit && (
                 <button
                   type="button"
-                  className={secondaryButtonClass}
                   aria-label={`Remove ${attachment.document.originalFilename} from ${recordTitle}`}
+                  title="Remove attachment"
                   onClick={() => void detach(attachment)}
+                  className="grid size-8 place-items-center rounded-lg text-slate-500 hover:bg-red-50 hover:text-red-700"
                 >
-                  Remove
+                  <X aria-hidden="true" className="size-4" />
                 </button>
               )}
             </li>
@@ -95,27 +99,33 @@ export function Attachments({
         </ul>
       )}
       <ErrorNote message={error} />
-      {canEdit && mode === 'closed' && (
-        <div className="mt-2 flex flex-wrap gap-2">
-          <button
-            type="button"
-            className={secondaryButtonClass}
-            aria-label={`Attach a new file to ${recordTitle}`}
+      {canEdit && (
+        <div className="flex flex-wrap gap-1">
+          <Button
+            variant="ghost"
+            icon={Upload}
+            aria-label={`Attach a file to ${recordTitle}`}
             onClick={() => setMode('upload')}
+            className="text-brand-700"
           >
-            Attach a photo or file
-          </button>
-          <button
-            type="button"
-            className={secondaryButtonClass}
-            aria-label={`Attach an uploaded document to ${recordTitle}`}
+            Attach a file
+          </Button>
+          <Button
+            variant="ghost"
+            icon={FolderOpen}
+            aria-label={`Attach from Documents to ${recordTitle}`}
             onClick={() => setMode('existing')}
+            className="text-brand-700"
           >
-            Attach an uploaded document
-          </button>
+            Attach from Documents
+          </Button>
         </div>
       )}
-      {canEdit && mode === 'upload' && (
+      <Dialog
+        open={canEdit && mode === 'upload'}
+        title={`Attach a file to ${recordTitle}`}
+        onClose={() => setMode('closed')}
+      >
         <UploadForm
           profileId={profileId}
           defaultCategory={recordType === 'LAB_RESULT' ? 'LAB_REPORT' : 'PHOTO'}
@@ -123,15 +133,19 @@ export function Attachments({
           onUploaded={attach}
           onCancel={() => setMode('closed')}
         />
-      )}
-      {canEdit && mode === 'existing' && (
+      </Dialog>
+      <Dialog
+        open={canEdit && mode === 'existing'}
+        title={`Attach a document to ${recordTitle}`}
+        onClose={() => setMode('closed')}
+      >
         <ExistingDocumentPicker
           profileId={profileId}
           exclude={attachments.map((attachment) => attachment.document.id)}
           onPick={attach}
           onCancel={() => setMode('closed')}
         />
-      )}
+      </Dialog>
     </div>
   )
 }
@@ -186,13 +200,13 @@ function ExistingDocumentPicker({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="mt-2 space-y-2 rounded border border-slate-200 p-3">
-      {!documents && !error && <p role="status">Loading…</p>}
+    <form onSubmit={handleSubmit} className="space-y-4 text-sm">
+      {!documents && !error && <Loading lines={2} />}
       {documents && documents.length === 0 && (
         <p className="text-slate-600">No other documents uploaded for this profile.</p>
       )}
       {documents && documents.length > 0 && (
-        <label className="block font-medium">
+        <label className="block font-medium text-slate-800">
           Document
           <select className={inputClass} value={selected} onChange={(event) => setSelected(event.target.value)}>
             <option value="">Choose a document</option>
@@ -205,13 +219,13 @@ function ExistingDocumentPicker({
         </label>
       )}
       <ErrorNote message={error} />
-      <div className="flex flex-wrap gap-2">
-        <button type="submit" disabled={!selected} className={primaryButtonClass}>
-          Attach
-        </button>
-        <button type="button" onClick={onCancel} className={secondaryButtonClass}>
+      <div className="flex flex-wrap justify-end gap-2">
+        <Button size="md" onClick={onCancel}>
           Cancel
-        </button>
+        </Button>
+        <Button type="submit" variant="primary" size="md" disabled={!selected}>
+          Attach
+        </Button>
       </div>
     </form>
   )

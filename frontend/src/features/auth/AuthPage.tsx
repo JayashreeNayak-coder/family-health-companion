@@ -4,7 +4,8 @@ import { login, register, type Account } from '../../api/auth'
 import { ApiError, type FieldError } from '../../api/client'
 import { Button } from '../../components/Button'
 import { ErrorNote } from '../../components/Feedback'
-import { inputClass } from '../../components/ui'
+import { inputClass } from '../../components/formStyles'
+import { useDocumentTitle } from '../../components/useDocumentTitle'
 import { Link } from '../../router'
 
 type Mode = 'login' | 'register'
@@ -67,6 +68,7 @@ export function AuthPage({ mode, onSignedIn }: { mode: Mode; onSignedIn: (accoun
   const [fieldErrors, setFieldErrors] = useState<FieldError[]>([])
 
   const isRegister = mode === 'register'
+  useDocumentTitle(isRegister ? 'Create an account' : 'Sign in')
 
   // Switching between sign-in and registration starts the form afresh, except the email.
   const [shownMode, setShownMode] = useState(mode)

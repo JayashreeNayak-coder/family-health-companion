@@ -1,3 +1,4 @@
+import { BellOff, Check, ChevronLeft, ChevronRight, Clock, Info, Trash2, X } from 'lucide-react'
 import { useEffect, useState, type FormEvent } from 'react'
 import { errorMessage } from '../../api/client'
 import {
@@ -9,14 +10,12 @@ import {
   type DueDose,
   type Schedule,
 } from '../../api/medications'
-import {
-  Card,
-  dangerButtonClass,
-  ErrorNote,
-  inputClass,
-  secondaryButtonClass,
-  compactSelectClass,
-} from '../../components/ui'
+import { Badge } from '../../components/Badge'
+import { Button } from '../../components/Button'
+import { Card } from '../../components/Card'
+import { EmptyState, ErrorNote, Loading } from '../../components/Feedback'
+import { TogglePill } from '../../components/TogglePill'
+import { compactSelectClass } from '../../components/formStyles'
 import { RecordSection } from '../records/RecordSection'
 import { MEDICATIONS } from '../records/resources'
 
@@ -24,6 +23,12 @@ const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
 function localToday() {
   return new Date().toLocaleDateString('en-CA')
+}
+
+/** Moves a YYYY-MM-DD date by whole days, in local time. */
+export function shiftDate(date: string, days: number): string {
+  const [year, month, day] = date.split('-').map(Number)
+  return new Date(year, month - 1, day + days).toLocaleDateString('en-CA')
 }
 
 function describeDays(days: number[] | null) {
@@ -39,10 +44,13 @@ export function MedicationsPanel({ profileId, canEdit }: Props) {
   const [revision, setRevision] = useState(0)
 
   return (
-    <>
-      <p className="rounded bg-amber-50 p-3 text-sm text-amber-900">
-        This records what you enter. It doesn't recommend medicines or doses. Talk to a qualified
-        healthcare professional before changing any medication.
+    <div className="space-y-6">
+      <p className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+        <Info aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+        <span>
+          This records what you enter. It doesn't recommend medicines or doses. Talk to a qualified
+          healthcare professional before changing any medication.
+        </span>
       </p>
       <DuePanel profileId={profileId} canEdit={canEdit} revision={revision} />
       <RecordSection
@@ -58,7 +66,7 @@ export function MedicationsPanel({ profileId, canEdit }: Props) {
           />
         )}
       />
-    </>
+    </div>
   )
 }
 
@@ -75,6 +83,7 @@ function DuePanel({
   const [doses, setDoses] = useState<DueDose[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [recorded, setRecorded] = useState(0)
+  const today = localToday()
 
   useEffect(() => {
     let ignore = false
@@ -106,64 +115,111 @@ function DuePanel({
     }
   }
 
-  return (
-    <Card title="Doses due">
-      <label className="block text-sm font-medium">
-        Date
+  const done = doses?.filter((dose) => dose.status !== null).length ?? 0
+
+  const dateControls = (
+    <div className="flex flex-wrap items-center gap-1">
+      <button
+        type="button"
+        aria-label="Previous day"
+        onClick={() => setDate((current) => shiftDate(current, -1))}
+        className="grid size-9 place-items-center rounded-lg text-slate-600 hover:bg-slate-100"
+      >
+        <ChevronLeft aria-hidden="true" className="size-4" />
+      </button>
+      <label>
+        <span className="sr-only">Date</span>
         <input
           type="date"
-          className={inputClass}
+          className={compactSelectClass}
           value={date}
-          onChange={(event) => setDate(event.target.value)}
+          required
+          onChange={(event) => event.target.value && setDate(event.target.value)}
         />
       </label>
+      <button
+        type="button"
+        aria-label="Next day"
+        onClick={() => setDate((current) => shiftDate(current, 1))}
+        className="grid size-9 place-items-center rounded-lg text-slate-600 hover:bg-slate-100"
+      >
+        <ChevronRight aria-hidden="true" className="size-4" />
+      </button>
+      {date !== today && (
+        <Button variant="ghost" onClick={() => setDate(today)}>
+          Today
+        </Button>
+      )}
+    </div>
+  )
+
+  return (
+    <Card
+      title="Doses due"
+      description={
+        doses && doses.length > 0
+          ? `${done} of ${doses.length} recorded${date === today ? ' today' : ''}`
+          : 'Active medications with a schedule appear here.'
+      }
+      actions={dateControls}
+    >
       <ErrorNote message={error} />
-      {!doses && !error && <p role="status">Loading…</p>}
+      {!doses && !error && <Loading lines={2} />}
       {doses && doses.length === 0 && (
-        <p className="mt-3 text-sm text-slate-600">
-          No doses due. Only active medications with a schedule appear here.
-        </p>
+        <EmptyState icon={Clock} title="No doses due">
+          Only active medications with a schedule appear here.
+        </EmptyState>
       )}
       {doses && doses.length > 0 && (
-        <ul className="mt-3 divide-y divide-slate-200">
+        <ul className="divide-y divide-slate-100">
           {doses.map((dose) => (
             <li
               key={`${dose.scheduleId}-${dose.scheduledFor}`}
-              className="flex flex-wrap items-center justify-between gap-2 py-2"
+              className="flex flex-wrap items-center gap-x-4 gap-y-2 py-3 first:pt-0 last:pb-0"
             >
-              <span>
-                <strong>{dose.timeOfDay}</strong> {dose.medicationName}
-                {dose.dosageAsRecorded && ` · ${dose.dosageAsRecorded}`}
-                <span className="block text-xs text-slate-600">
-                  {dose.timeZone}
-                  {dose.reminderEnabled ? '' : ' · reminder off'}
+              <span className="w-14 shrink-0 rounded-lg bg-slate-100 py-1 text-center text-sm font-semibold text-slate-800 tabular-nums">
+                {dose.timeOfDay}
+              </span>
+              <span className="min-w-40 flex-1">
+                <span className="block font-medium text-slate-900">{dose.medicationName}</span>
+                <span className="flex flex-wrap items-center gap-x-2 text-xs text-slate-500">
+                  {dose.dosageAsRecorded && <span>{dose.dosageAsRecorded}</span>}
+                  <span>{dose.timeZone}</span>
+                  {!dose.reminderEnabled && (
+                    <span className="inline-flex items-center gap-1">
+                      <BellOff aria-hidden="true" className="size-3" />
+                      reminder off
+                    </span>
+                  )}
                 </span>
               </span>
-              {dose.status && (
-                <span className="text-sm font-medium">
-                  {dose.status === 'TAKEN' ? 'Taken' : 'Skipped'}
-                </span>
+              {dose.status === 'TAKEN' && (
+                <Badge tone="success" icon={Check}>
+                  Taken
+                </Badge>
+              )}
+              {dose.status === 'SKIPPED' && (
+                <Badge icon={X}>Skipped</Badge>
               )}
               {!dose.status && canEdit && (
                 <span className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    className={secondaryButtonClass}
+                  <Button
+                    icon={Check}
                     aria-label={`Mark ${dose.medicationName} at ${dose.timeOfDay} as taken`}
                     onClick={() => void record(dose, 'TAKEN')}
                   >
                     Taken
-                  </button>
-                  <button
-                    type="button"
-                    className={secondaryButtonClass}
+                  </Button>
+                  <Button
+                    icon={X}
                     aria-label={`Mark ${dose.medicationName} at ${dose.timeOfDay} as skipped`}
                     onClick={() => void record(dose, 'SKIPPED')}
                   >
                     Skipped
-                  </button>
+                  </Button>
                 </span>
               )}
+              {!dose.status && !canEdit && <Badge>Not recorded</Badge>}
             </li>
           ))}
         </ul>
@@ -246,22 +302,30 @@ function ScheduleEditor({
   }
 
   return (
-    <div className="mt-2 rounded bg-slate-50 p-2 text-sm">
-      <strong>Schedule</strong>
+    <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50/60 p-3 text-sm">
+      <p className="flex items-center gap-1.5 font-medium text-slate-800">
+        <Clock aria-hidden="true" className="size-4 text-slate-500" />
+        Schedule
+      </p>
       <ErrorNote message={error} />
-      {schedules && schedules.length === 0 && <p className="text-slate-600">No schedule set.</p>}
+      {schedules && schedules.length === 0 && <p className="mt-1 text-slate-500">No schedule set.</p>}
       {schedules && schedules.length > 0 && (
-        <ul>
+        <ul className="mt-2 space-y-1.5">
           {schedules.map((schedule) => (
-            <li key={schedule.id} className="flex flex-wrap items-center gap-2 py-1">
-              <span>
-                {schedule.timeOfDay} · {describeDays(schedule.daysOfWeek)} · {schedule.timeZone}
+            <li
+              key={schedule.id}
+              className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg bg-white px-3 py-2 ring-1 ring-slate-200"
+            >
+              <span className="font-semibold text-slate-900 tabular-nums">{schedule.timeOfDay}</span>
+              <span className="min-w-0 flex-1 text-slate-600">
+                {describeDays(schedule.daysOfWeek)} · {schedule.timeZone}
               </span>
-              {canEdit && (
+              {canEdit ? (
                 <>
-                  <label className="flex items-center gap-1">
+                  <label className="inline-flex items-center gap-1.5 text-slate-700">
                     <input
                       type="checkbox"
+                      className="size-4 accent-brand-700"
                       checked={schedule.reminderEnabled}
                       onChange={() =>
                         void save(
@@ -277,26 +341,29 @@ function ScheduleEditor({
                   </label>
                   <button
                     type="button"
-                    className={dangerButtonClass}
                     aria-label={`Remove schedule at ${schedule.timeOfDay}`}
+                    title="Remove"
                     onClick={() => void save(schedules.filter((item) => item.id !== schedule.id))}
+                    className="grid size-8 place-items-center rounded-lg text-slate-500 hover:bg-red-50 hover:text-red-700"
                   >
-                    Remove
+                    <Trash2 aria-hidden="true" className="size-4" />
                   </button>
                 </>
+              ) : (
+                !schedule.reminderEnabled && <span className="text-xs text-slate-500">reminder off</span>
               )}
             </li>
           ))}
         </ul>
       )}
       {canEdit && schedules && (
-        <form onSubmit={handleAdd} className="mt-2 flex flex-wrap items-end gap-2">
-          <label className="font-medium">
+        <form onSubmit={handleAdd} className="mt-3 flex flex-wrap items-center gap-2">
+          <label className="inline-flex items-center gap-2 font-medium text-slate-700">
             Time
             <input
               type="time"
               required
-              className={`ml-1 ${compactSelectClass}`}
+              className={compactSelectClass}
               value={time}
               onChange={(event) => setTime(event.target.value)}
             />
@@ -304,19 +371,16 @@ function ScheduleEditor({
           <fieldset className="flex flex-wrap gap-1">
             <legend className="sr-only">Days (none selected means every day)</legend>
             {DAYS.map((label, index) => (
-              <label key={label} className="flex items-center gap-0.5">
-                <input
-                  type="checkbox"
-                  checked={days.includes(index + 1)}
-                  onChange={() => toggleDay(index + 1)}
-                />
-                {label}
-              </label>
+              <TogglePill
+                key={label}
+                label={label}
+                checked={days.includes(index + 1)}
+                onChange={() => toggleDay(index + 1)}
+              />
             ))}
           </fieldset>
-          <button type="submit" className={secondaryButtonClass}>
-            Add time
-          </button>
+          <Button type="submit">Add time</Button>
+          <span className="w-full text-xs text-slate-500">No days selected means every day.</span>
         </form>
       )}
     </div>

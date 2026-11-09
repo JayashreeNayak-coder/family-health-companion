@@ -75,11 +75,11 @@ describe('Record attachments', () => {
     })
     render(<RecordSection profileId="p1" canEdit resource={VISITS} />)
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Attach an uploaded document to Synthetic checkup' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Attach from Documents to Synthetic checkup' }))
     fireEvent.change(await screen.findByLabelText('Document'), { target: { value: 'd1' } })
     fireEvent.click(screen.getByRole('button', { name: 'Attach' }))
 
-    await screen.findByRole('button', { name: 'Attach a new file to Synthetic checkup' })
+    await screen.findByRole('button', { name: 'Attach a file to Synthetic checkup' })
     expect(requestBody(stub, 'POST', '/profiles/p1/attachments')).toEqual({
       recordType: 'VISIT',
       recordId: 'v1',

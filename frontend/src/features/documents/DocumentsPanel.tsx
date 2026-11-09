@@ -1,3 +1,4 @@
+import { FileText, FolderOpen, Image, Lock, Sparkles, Trash2, Upload } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { errorMessage } from '../../api/client'
 import {
@@ -7,15 +8,32 @@ import {
   listDocuments,
   type HealthDocument,
 } from '../../api/documents'
-import { Card, dangerButtonClass, ErrorNote, Missing, secondaryButtonClass } from '../../components/ui'
+import { AiBadge, Badge } from '../../components/Badge'
+import { Button } from '../../components/Button'
+import { Card } from '../../components/Card'
+import { Dialog, useConfirm } from '../../components/Dialog'
+import { EmptyState, ErrorNote, Loading, Missing } from '../../components/Feedback'
+import { useToast } from '../../components/Toast'
 import { DocumentView } from './DocumentView'
 import { DraftReview } from './DraftReview'
 import { ExtractionControls } from './ExtractionControls'
 import { UploadForm } from './UploadForm'
-import { useConfirm } from '../../components/Dialog'
-import { useToast } from '../../components/Toast'
 
 type Props = { profileId: string; canEdit: boolean; canManage: boolean }
+
+/** Where the AI is with a document, as a short label. Nothing for a document it never read. */
+function AiStatus({ status }: { status: string }) {
+  if (status === 'READY_FOR_REVIEW') {
+    return <AiBadge>Draft ready to review</AiBadge>
+  }
+  if (status === 'REVIEWED') {
+    return <Badge tone="success">AI draft reviewed</Badge>
+  }
+  if (status === 'FAILED') {
+    return <Badge>AI couldn't read it</Badge>
+  }
+  return null
+}
 
 export function DocumentsPanel({ profileId, canEdit, canManage }: Props) {
   const [documents, setDocuments] = useState<HealthDocument[] | null>(null)
@@ -81,86 +99,117 @@ export function DocumentsPanel({ profileId, canEdit, canManage }: Props) {
     }
   }
 
+  const uploadButton = canEdit && (
+    <Button variant="primary" icon={Upload} onClick={() => setUploading(true)}>
+      Upload a document
+    </Button>
+  )
+
   return (
-    <Card title="Documents">
+    <Card
+      title="Documents"
+      description="Prescriptions, lab reports, scans, bills, and photos, kept as evidence."
+      actions={uploadButton}
+    >
       {confirmDialog}
-      <p className="mb-3 text-sm text-slate-600">
-        Prescriptions, lab reports, scans, bills, and photos, kept as evidence. Files are private to
-        the people with access to this profile. Scans and X-rays are stored, never interpreted.
-        &ldquo;Read with AI&rdquo; sends the file to an outside AI service to draft records for you to
-        check: use synthetic documents only.
-      </p>
+      <div className="mb-5 grid gap-2 text-sm sm:grid-cols-2">
+        <p className="flex items-start gap-2 rounded-lg bg-slate-50 px-3 py-2 text-slate-700">
+          <Lock aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-slate-500" />
+          <span>
+            Files are private to the people with access to this profile. Scans and X-rays are
+            stored, never interpreted.
+          </span>
+        </p>
+        <p className="flex items-start gap-2 rounded-lg bg-violet-50 px-3 py-2 text-violet-900">
+          <Sparkles aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+          <span>
+            &ldquo;Read with AI&rdquo; sends the file to an outside AI service to draft records for
+            you to check: use synthetic documents only.
+          </span>
+        </p>
+      </div>
       <ErrorNote message={error} />
-      {!documents && !error && <p role="status">Loading…</p>}
+      {!documents && !error && <Loading />}
       {documents && documents.length === 0 && (
-        <p className="text-sm text-slate-600">No documents uploaded.</p>
+        <EmptyState icon={FolderOpen} title="No documents uploaded.">
+          Upload a prescription or report to keep it with this profile.
+        </EmptyState>
       )}
       {documents && documents.length > 0 && (
-        <ul className="divide-y divide-slate-200">
-          {documents.map((document) => (
-            <li key={document.id} className="py-3">
-              <div className="flex flex-wrap items-center gap-2">
-                <strong>{document.description ?? document.originalFilename}</strong>
-                <span className="rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-700">
-                  {CATEGORY_LABELS[document.category]}
-                </span>
-              </div>
-              <p className="text-sm text-slate-600">
-                {document.originalFilename} · {formatSize(document.sizeBytes)} · Dated{' '}
-                {document.documentOn ?? <Missing />}
-              </p>
-              <div className="mt-2 flex flex-wrap gap-2">
-                <DocumentView profileId={profileId} document={document} />
-                {canEdit && (
-                  <ExtractionControls
+        <ul className="divide-y divide-slate-100">
+          {documents.map((document) => {
+            const isImage = document.contentType.startsWith('image/')
+            const Icon = isImage ? Image : FileText
+            return (
+              <li key={document.id} className="py-4 first:pt-0 last:pb-0">
+                <div className="flex items-start gap-3">
+                  <span
+                    aria-hidden="true"
+                    className="grid size-10 shrink-0 place-items-center rounded-lg bg-brand-50 text-brand-700"
+                  >
+                    <Icon className="size-5" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h4 className="font-semibold break-words text-slate-900">
+                        {document.description ?? document.originalFilename}
+                      </h4>
+                      <Badge>{CATEGORY_LABELS[document.category]}</Badge>
+                      <AiStatus status={document.extractionStatus} />
+                    </div>
+                    <p className="mt-0.5 text-sm break-all text-slate-500">
+                      {document.originalFilename} · {formatSize(document.sizeBytes)} · Dated{' '}
+                      {document.documentOn ?? <Missing />}
+                    </p>
+                  </div>
+                  {canManage && (
+                    <button
+                      type="button"
+                      aria-label={`Delete ${document.originalFilename}`}
+                      title="Delete"
+                      onClick={() => void handleDelete(document)}
+                      className="grid size-9 shrink-0 place-items-center rounded-lg text-slate-500 hover:bg-red-50 hover:text-red-700"
+                    >
+                      <Trash2 aria-hidden="true" className="size-4" />
+                    </button>
+                  )}
+                </div>
+                <div className="mt-3 flex flex-wrap items-start gap-2 sm:pl-13">
+                  <DocumentView profileId={profileId} document={document} />
+                  {canEdit && (
+                    <ExtractionControls
+                      profileId={profileId}
+                      document={document}
+                      onRequested={() => setRevision((current) => current + 1)}
+                      onReview={() => setReviewing(document.id)}
+                    />
+                  )}
+                </div>
+                {reviewing === document.id && (
+                  <DraftReview
                     profileId={profileId}
                     document={document}
-                    onRequested={() => setRevision((current) => current + 1)}
-                    onReview={() => setReviewing(document.id)}
+                    onClose={() => {
+                      setReviewing(null)
+                      setRevision((current) => current + 1)
+                    }}
                   />
                 )}
-                {canManage && (
-                  <button
-                    type="button"
-                    className={dangerButtonClass}
-                    aria-label={`Delete ${document.originalFilename}`}
-                    onClick={() => void handleDelete(document)}
-                  >
-                    Delete
-                  </button>
-                )}
-              </div>
-              {reviewing === document.id && (
-                <DraftReview
-                  profileId={profileId}
-                  document={document}
-                  onClose={() => {
-                    setReviewing(null)
-                    setRevision((current) => current + 1)
-                  }}
-                />
-              )}
-            </li>
-          ))}
+              </li>
+            )
+          })}
         </ul>
       )}
-      {canEdit && !uploading && (
-        <button
-          type="button"
-          className={`mt-3 ${secondaryButtonClass}`}
-          onClick={() => setUploading(true)}
-        >
-          Upload a document
-        </button>
-      )}
-      {canEdit && uploading && (
+      <Dialog open={canEdit && uploading} title="Upload a document" onClose={() => setUploading(false)}>
         <UploadForm
           profileId={profileId}
           onUploaded={() => {
             toast('Document uploaded')
             reload()
-          }} onCancel={() => setUploading(false)} />
-      )}
+          }}
+          onCancel={() => setUploading(false)}
+        />
+      </Dialog>
     </Card>
   )
 }

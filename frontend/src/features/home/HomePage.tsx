@@ -1,8 +1,10 @@
 import type { Account } from '../../api/auth'
+import { useDocumentTitle } from '../../components/useDocumentTitle'
 import { Dashboard } from './Dashboard'
 
-/** Home. UI-3 replaces the dashboard below with the family overview. */
+/** Home: a greeting, then the family overview. */
 export function HomePage({ account }: { account: Account }) {
+  useDocumentTitle('Home')
   return (
     <div className="space-y-6">
       <header>

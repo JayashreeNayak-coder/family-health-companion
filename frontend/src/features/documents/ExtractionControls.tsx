@@ -1,8 +1,10 @@
+import { Loader2, Sparkles } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { errorMessage } from '../../api/client'
 import type { HealthDocument } from '../../api/documents'
 import { failureMessage, getExtractionJob, requestExtraction } from '../../api/extraction'
-import { ErrorNote, secondaryButtonClass } from '../../components/ui'
+import { Button } from '../../components/Button'
+import { ErrorNote } from '../../components/Feedback'
 
 type Props = {
   profileId: string
@@ -16,6 +18,7 @@ export function ExtractionControls({ profileId, document, onRequested, onReview 
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const status = document.extractionStatus
+  const readLabel = status === 'NOT_REQUESTED' ? 'Read with AI' : 'Read with AI again'
 
   async function start() {
     setBusy(true)
@@ -32,30 +35,33 @@ export function ExtractionControls({ profileId, document, onRequested, onReview 
 
   if (status === 'QUEUED' || status === 'PROCESSING') {
     return (
-      <span role="status" className="self-center text-sm text-slate-600">
+      <span
+        role="status"
+        className="inline-flex min-h-9 items-center gap-2 rounded-lg bg-violet-50 px-3 text-sm font-medium text-violet-800"
+      >
+        <Loader2 aria-hidden="true" className="size-4 animate-spin" />
         AI is reading this document…
       </span>
     )
   }
   if (status === 'READY_FOR_REVIEW') {
     return (
-      <button type="button" className={secondaryButtonClass} onClick={onReview}>
+      <Button variant="primary" icon={Sparkles} onClick={onReview}>
         Review AI draft
-      </button>
+      </Button>
     )
   }
   return (
     <>
-      {status === 'FAILED' && <FailureNote profileId={profileId} documentId={document.id} />}
-      <button
-        type="button"
-        className={secondaryButtonClass}
-        disabled={busy}
-        aria-label={`Read ${document.originalFilename} with AI`}
+      <Button
+        icon={Sparkles}
+        busy={busy}
+        aria-label={`${readLabel}: ${document.originalFilename}`}
         onClick={() => void start()}
       >
-        {status === 'NOT_REQUESTED' ? 'Read with AI' : 'Read with AI again'}
-      </button>
+        {readLabel}
+      </Button>
+      {status === 'FAILED' && <FailureNote profileId={profileId} documentId={document.id} />}
       <ErrorNote message={error} />
     </>
   )
@@ -87,8 +93,8 @@ function FailureNote({ profileId, documentId }: { profileId: string; documentId:
     return null
   }
   return (
-    <span className="self-center text-sm text-slate-700">
+    <p className="w-full rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-700">
       {failureMessage(code)} The document is kept, and you can enter its details by hand.
-    </span>
+    </p>
   )
 }
