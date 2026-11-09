@@ -12,6 +12,8 @@ import { DocumentView } from './DocumentView'
 import { DraftReview } from './DraftReview'
 import { ExtractionControls } from './ExtractionControls'
 import { UploadForm } from './UploadForm'
+import { useConfirm } from '../../components/Dialog'
+import { useToast } from '../../components/Toast'
 
 type Props = { profileId: string; canEdit: boolean; canManage: boolean }
 
@@ -21,6 +23,8 @@ export function DocumentsPanel({ profileId, canEdit, canManage }: Props) {
   const [revision, setRevision] = useState(0)
   const [uploading, setUploading] = useState(false)
   const [reviewing, setReviewing] = useState<string | null>(null)
+  const [confirm, confirmDialog] = useConfirm()
+  const toast = useToast()
   const inProgress = documents?.some((document) =>
     ['QUEUED', 'PROCESSING'].includes(document.extractionStatus),
   )
@@ -59,16 +63,18 @@ export function DocumentsPanel({ profileId, canEdit, canManage }: Props) {
   }
 
   async function handleDelete(document: HealthDocument) {
-    if (
-      !window.confirm(
-        `Permanently delete ${document.originalFilename}? Records that came from it keep their data, and show that the source was deleted.`,
-      )
-    ) {
+    const confirmed = await confirm({
+      title: 'Delete this document?',
+      message: `${document.originalFilename} will be permanently deleted. Records that came from it keep their data, and show that the source was deleted.`,
+      confirmLabel: 'Delete document',
+    })
+    if (!confirmed) {
       return
     }
     setError(null)
     try {
       await deleteDocument(profileId, document.id)
+      toast('Document deleted')
       reload()
     } catch (failure) {
       setError(errorMessage(failure))
@@ -77,6 +83,7 @@ export function DocumentsPanel({ profileId, canEdit, canManage }: Props) {
 
   return (
     <Card title="Documents">
+      {confirmDialog}
       <p className="mb-3 text-sm text-slate-600">
         Prescriptions, lab reports, scans, bills, and photos, kept as evidence. Files are private to
         the people with access to this profile. Scans and X-rays are stored, never interpreted.
@@ -147,7 +154,12 @@ export function DocumentsPanel({ profileId, canEdit, canManage }: Props) {
         </button>
       )}
       {canEdit && uploading && (
-        <UploadForm profileId={profileId} onUploaded={reload} onCancel={() => setUploading(false)} />
+        <UploadForm
+          profileId={profileId}
+          onUploaded={() => {
+            toast('Document uploaded')
+            reload()
+          }} onCancel={() => setUploading(false)} />
       )}
     </Card>
   )

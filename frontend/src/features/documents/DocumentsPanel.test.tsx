@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { page, problem, stubApi } from '../../test/stubApi'
 import { DocumentsPanel } from './DocumentsPanel'
@@ -96,7 +96,6 @@ describe('DocumentsPanel', () => {
   })
 
   it('deletesAfterConfirmingWhenTheUserCanManage', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
     const stub = stubApi({
       [LIST]: [page([document]), page([])],
       'DELETE /profiles/p1/documents/d1': { status: 204 },
@@ -104,9 +103,11 @@ describe('DocumentsPanel', () => {
     render(<DocumentsPanel profileId="p1" canEdit canManage />)
 
     fireEvent.click(await screen.findByRole('button', { name: 'Delete prescription.jpg' }))
+    const dialog = screen.getByRole('dialog', { name: 'Delete this document?' })
+    expect(dialog).toHaveTextContent('keep their data')
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Delete document' }))
 
     expect(await screen.findByText('No documents uploaded.')).toBeInTheDocument()
-    expect(window.confirm).toHaveBeenCalledWith(expect.stringContaining('keep their data'))
     expect(stub).toHaveBeenCalledWith('/api/v1/profiles/p1/documents/d1', expect.anything())
   })
 

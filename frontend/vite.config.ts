@@ -2,7 +2,11 @@ import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vitest/config'
 
-const backend = 'http://localhost:8081'
+// Node's process, without adding @types/node for one line.
+declare const process: { env: Record<string, string | undefined> }
+
+// BACKEND_URL lets a second backend run beside the usual one, as the screenshot checks do.
+const backend = process.env.BACKEND_URL ?? 'http://localhost:8081'
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
@@ -16,5 +20,7 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     setupFiles: './src/test/setup.ts',
+    // Playwright owns e2e/. Vitest runs only the component tests.
+    include: ['src/**/*.test.{ts,tsx}'],
   },
 })

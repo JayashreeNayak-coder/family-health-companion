@@ -20,7 +20,7 @@
 | Unit | JUnit 5, Mockito, AssertJ | Business rules and validation | Every build |
 | Integration | Spring Boot Test, Testcontainers (PostgreSQL 18), MockMvc | Migrations, repositories, security, full API flows | Every build |
 | Frontend | Vitest, React Testing Library | Components, states, labels, and errors | Every build |
-| End-to-end | Playwright, a dependency to approve later | A few critical journeys against the full stack | Added in Phase 19 |
+| End-to-end | Playwright (approved, `DECISIONS.md` D-023) | Screenshots of every page at phone, tablet, and desktop widths, failing if a page scrolls sideways. Critical journeys follow in Phase 19. | On demand (`npm run screenshots`), needs the app running |
 | AI safety | Fake provider, plus optional real provider runs | Safety behaviour | Fake on every build; real on demand |
 
 Backend test classes follow the Maven convention: `*Test` runs under Surefire and `*IntegrationTest` under Failsafe.

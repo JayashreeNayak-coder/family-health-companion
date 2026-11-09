@@ -1,1 +1,59 @@
 @import 'tailwindcss';
+
+/*
+ * Design tokens (UI redesign, phase UI-1). Calm and clinical: teal for actions and brand,
+ * cool slate neutrals, and colour only where it carries meaning. Components use these names,
+ * never raw hex values, so the palette can change in one place.
+ */
+@theme {
+  /* The operating system's own interface font: no download, good at small sizes. */
+  --font-sans: 'Segoe UI', system-ui, -apple-system, Roboto, 'Helvetica Neue', Arial, sans-serif;
+
+  /* Brand and primary actions. */
+  --color-brand-50: #f0fdfa;
+  --color-brand-100: #ccfbf1;
+  --color-brand-200: #99f6e4;
+  --color-brand-600: #0d9488;
+  --color-brand-700: #0f766e;
+  --color-brand-800: #115e59;
+  --color-brand-900: #134e4a;
+
+  /* Navigation surface. */
+  --color-sidebar: #0f2e2c;
+  --color-sidebar-active: #134e4a;
+  --color-sidebar-text: #cfe7e3;
+  --color-sidebar-muted: #7fb3ac;
+
+  /* Where information comes from (docs/06 section 8.3). Never used for anything else. */
+  --color-source-user-bg: #f1f5f9;
+  --color-source-user-fg: #334155;
+  --color-source-doc-bg: #e0f2fe;
+  --color-source-doc-fg: #075985;
+  --color-source-ai-bg: #ede9fe;
+  --color-source-ai-fg: #5b21b6;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-slate-50 text-slate-900 antialiased;
+  }
+
+  /* One visible focus style for everything a keyboard can reach. */
+  :focus-visible {
+    outline: 2px solid var(--color-brand-600);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}

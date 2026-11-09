@@ -62,7 +62,7 @@ export function DocumentView({ profileId, document }: Props) {
           className="max-h-96 rounded border border-slate-200"
         />
       )}
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         {!isImage && (
           <a className={secondaryButtonClass} href={url} target="_blank" rel="noreferrer">
             Open PDF in a new tab

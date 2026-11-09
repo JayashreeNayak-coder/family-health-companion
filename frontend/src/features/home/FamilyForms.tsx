@@ -108,7 +108,7 @@ export function JoinFamilyForm({ onJoined }: { onJoined: () => void }) {
           </label>
         )}
         <ErrorNote message={error} />
-        <div className="mt-3 flex gap-2">
+        <div className="mt-3 flex flex-wrap gap-2">
           <button type="button" disabled={busy} onClick={handleAccept} className={primaryButtonClass}>
             Accept invitation
           </button>

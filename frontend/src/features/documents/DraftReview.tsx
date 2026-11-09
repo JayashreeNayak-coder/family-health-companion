@@ -25,6 +25,8 @@ import {
   type ResourceConfig,
 } from '../records/resources'
 import { DocumentView } from './DocumentView'
+import { useConfirm } from '../../components/Dialog'
+import { AiBadge } from '../../components/Badge'
 
 const RESOURCES: Record<DraftItemType, ResourceConfig> = {
   MEDICATION: MEDICATIONS,
@@ -47,6 +49,7 @@ type Props = {
 export function DraftReview({ profileId, document, onClose }: Props) {
   const [draft, setDraft] = useState<Draft | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [confirm, confirmDialog] = useConfirm()
 
   useEffect(() => {
     let ignore = false
@@ -76,7 +79,12 @@ export function DraftReview({ profileId, document, onClose }: Props) {
   }
 
   async function discardRest() {
-    if (!window.confirm('Discard every item not yet approved? Nothing from them will be saved.')) {
+    const confirmed = await confirm({
+      title: 'Discard the remaining items?',
+      message: 'Every item not yet approved will be discarded, and nothing from them will be saved. Approved items stay saved.',
+      confirmLabel: 'Discard items',
+    })
+    if (!confirmed) {
       return
     }
     setError(null)
@@ -90,11 +98,10 @@ export function DraftReview({ profileId, document, onClose }: Props) {
   const pending = draft?.items.filter((item) => item.status === 'PENDING').length ?? 0
 
   return (
-    <div className="mt-3 space-y-3 rounded border-2 border-amber-300 bg-amber-50 p-3">
+    <div className="mt-3 space-y-3 rounded-xl border border-violet-200 bg-violet-50/60 p-4">
+      {confirmDialog}
       <div className="flex flex-wrap items-center gap-2">
-        <span className="rounded bg-amber-200 px-2 py-0.5 text-xs font-semibold text-amber-900">
-          AI generated
-        </span>
+        <AiBadge>AI generated · needs review</AiBadge>
         <h4 className="font-semibold">Review the extracted details</h4>
       </div>
       <ErrorNote message={error} />
@@ -120,7 +127,7 @@ export function DraftReview({ profileId, document, onClose }: Props) {
               onChanged={replaceItem}
             />
           ))}
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             {pending > 0 && (
               <button type="button" className={secondaryButtonClass} onClick={() => void discardRest()}>
                 Discard the {pending} remaining {pending === 1 ? 'item' : 'items'}
@@ -245,7 +252,7 @@ function DraftItemCard({
         )
       })}
       <ErrorNote message={error} />
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <button type="submit" disabled={busy} className={primaryButtonClass}>
           Approve and save
         </button>

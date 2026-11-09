@@ -42,7 +42,6 @@ describe('Record attachments', () => {
   })
 
   it('showsEachRecordsAttachmentsAndKeepsTheDocumentWhenOneIsRemoved', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
     const stub = stubApi({
       [LIST]: page([visit]),
       [ATTACHMENTS]: [
@@ -57,9 +56,11 @@ describe('Record attachments', () => {
     expect(within(list).getByText('Synthetic clinic bill')).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Remove bill.png from Synthetic checkup' }))
+    const dialog = screen.getByRole('dialog', { name: 'Remove this attachment?' })
+    expect(dialog).toHaveTextContent('document itself is kept')
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Remove' }))
 
     await waitFor(() => expect(screen.queryByText('Synthetic clinic bill')).not.toBeInTheDocument())
-    expect(window.confirm).toHaveBeenCalledWith(expect.stringContaining('document itself is kept'))
     expect(stub).toHaveBeenCalledWith('/api/v1/profiles/p1/attachments/a1', expect.anything())
   })
 

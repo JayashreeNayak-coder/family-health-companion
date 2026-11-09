@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { page, problem, requestBody, stubApi } from '../../test/stubApi'
 import { RecordSection } from './RecordSection'
@@ -153,15 +153,17 @@ describe('RecordSection', () => {
       [LIST]: [page([allergy]), page([])],
       'DELETE /profiles/p1/allergies/r1': { status: 204 },
     })
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
     renderAllergies()
     const remove = await screen.findByRole('button', { name: 'Delete Synthetic pollen' })
 
     fireEvent.click(remove)
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Cancel' }))
     expect(stub.mock.calls.some(([, init]) => init?.method === 'DELETE')).toBe(false)
 
-    confirm.mockReturnValue(true)
     fireEvent.click(remove)
+    const dialog = screen.getByRole('dialog', { name: 'Delete this allergy?' })
+    expect(dialog).toHaveTextContent('Synthetic pollen will be permanently deleted')
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Delete' }))
 
     expect(await screen.findByText(/None recorded/)).toBeInTheDocument()
   })

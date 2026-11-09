@@ -72,7 +72,7 @@ describe('DraftReview', () => {
 
     const form = await openReview()
 
-    expect(screen.getByText('AI generated')).toBeInTheDocument()
+    expect(screen.getByText('AI generated · needs review')).toBeInTheDocument()
     expect(screen.getByText(/Nothing is saved until you approve it/)).toBeInTheDocument()
     expect(within(form).getByLabelText(/^Test/)).toHaveValue('HbA1c')
     expect(within(form).getByLabelText(/^Unit/)).toHaveValue('')

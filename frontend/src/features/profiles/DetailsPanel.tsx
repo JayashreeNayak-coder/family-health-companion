@@ -9,6 +9,7 @@ import {
   Missing,
   primaryButtonClass,
 } from '../../components/ui'
+import { useConfirm } from '../../components/Dialog'
 
 type Props = {
   profile: Profile
@@ -21,6 +22,7 @@ export function DetailsPanel({ profile, onSaved, onDeleted }: Props) {
   const [dateOfBirth, setDateOfBirth] = useState(profile.dateOfBirth ?? '')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [confirm, confirmDialog] = useConfirm()
   const canEdit = profile.accessLevel !== 'VIEW'
 
   async function handleSave(event: FormEvent) {
@@ -43,9 +45,11 @@ export function DetailsPanel({ profile, onSaved, onDeleted }: Props) {
   }
 
   async function handleDelete() {
-    const confirmed = window.confirm(
-      `Permanently delete ${profile.fullName} and all of their records? This can't be undone.`,
-    )
+    const confirmed = await confirm({
+      title: `Delete ${profile.fullName}?`,
+      message: `This permanently deletes ${profile.fullName} and all of their records and documents. It can't be undone.`,
+      confirmLabel: 'Delete profile',
+    })
     if (!confirmed) {
       return
     }
@@ -71,6 +75,7 @@ export function DetailsPanel({ profile, onSaved, onDeleted }: Props) {
 
   return (
     <Card>
+      {confirmDialog}
       <form onSubmit={handleSave} className="space-y-3">
         <label className="block text-sm font-medium">
           Full name

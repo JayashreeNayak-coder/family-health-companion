@@ -15,6 +15,7 @@ import {
   ErrorNote,
   inputClass,
   secondaryButtonClass,
+  compactSelectClass,
 } from '../../components/ui'
 import { RecordSection } from '../records/RecordSection'
 import { MEDICATIONS } from '../records/resources'
@@ -144,7 +145,7 @@ function DuePanel({
                 </span>
               )}
               {!dose.status && canEdit && (
-                <span className="flex gap-2">
+                <span className="flex flex-wrap gap-2">
                   <button
                     type="button"
                     className={secondaryButtonClass}
@@ -295,7 +296,7 @@ function ScheduleEditor({
             <input
               type="time"
               required
-              className="ml-1 rounded border border-slate-300 px-2 py-1"
+              className={`ml-1 ${compactSelectClass}`}
               value={time}
               onChange={(event) => setTime(event.target.value)}
             />

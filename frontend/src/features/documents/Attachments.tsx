@@ -16,6 +16,7 @@ import {
 } from '../../components/ui'
 import { DocumentView } from './DocumentView'
 import { UploadForm } from './UploadForm'
+import { useConfirm } from '../../components/Dialog'
 
 type Props = {
   profileId: string
@@ -39,6 +40,7 @@ export function Attachments({
 }: Props) {
   const [mode, setMode] = useState<'closed' | 'upload' | 'existing'>('closed')
   const [error, setError] = useState<string | null>(null)
+  const [confirm, confirmDialog] = useConfirm()
 
   async function attach(document: HealthDocument) {
     await attachDocument(profileId, recordType, recordId, document.id)
@@ -47,7 +49,12 @@ export function Attachments({
   }
 
   async function detach(attachment: Attachment) {
-    if (!window.confirm(`Remove ${attachment.document.originalFilename} from this record? The document itself is kept.`)) {
+    const confirmed = await confirm({
+      title: 'Remove this attachment?',
+      message: `${attachment.document.originalFilename} will be removed from this record. The document itself is kept in Documents.`,
+      confirmLabel: 'Remove',
+    })
+    if (!confirmed) {
       return
     }
     setError(null)
@@ -65,6 +72,7 @@ export function Attachments({
 
   return (
     <div className="mt-2 text-sm">
+      {confirmDialog}
       {attachments.length > 0 && (
         <ul aria-label={`Attachments for ${recordTitle}`} className="space-y-1">
           {attachments.map((attachment) => (
@@ -88,7 +96,7 @@ export function Attachments({
       )}
       <ErrorNote message={error} />
       {canEdit && mode === 'closed' && (
-        <div className="mt-2 flex gap-2">
+        <div className="mt-2 flex flex-wrap gap-2">
           <button
             type="button"
             className={secondaryButtonClass}
@@ -197,7 +205,7 @@ function ExistingDocumentPicker({
         </label>
       )}
       <ErrorNote message={error} />
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <button type="submit" disabled={!selected} className={primaryButtonClass}>
           Attach
         </button>

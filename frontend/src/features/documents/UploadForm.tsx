@@ -109,7 +109,7 @@ export function UploadForm({
         />
       </label>
       <ErrorNote message={error} />
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <button type="submit" disabled={busy} className={primaryButtonClass}>
           {busy ? 'Uploading…' : submitLabel}
         </button>

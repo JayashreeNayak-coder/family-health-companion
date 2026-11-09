@@ -86,6 +86,12 @@ npm test
 npm run build
 ```
 
+Screenshot checks need the backend and `npm run dev` running, plus a one-time `npx playwright install chromium`. They create a synthetic account, capture every page at phone, tablet, and desktop widths into `frontend/e2e/screenshots/`, and fail if a page scrolls sideways:
+
+```powershell
+npm run screenshots
+```
+
 ## Run the full stack with Docker
 
 This requires Docker, which isn't set up on the current development machine, so CI runs this check.

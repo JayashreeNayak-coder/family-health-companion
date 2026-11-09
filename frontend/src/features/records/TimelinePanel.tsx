@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { errorMessage } from '../../api/client'
 import { getTimeline, type Timeline, type TimelineEntry, type TimelineType } from '../../api/timeline'
 import { Card, ErrorNote, inputClass } from '../../components/ui'
-import { SourceLabel } from './SourceLabel'
+import { SourceBadge } from '../../components/Badge'
 
 const TYPES: { value: TimelineType; label: string }[] = [
   { value: 'CONDITION', label: 'Conditions' },
@@ -27,7 +27,7 @@ function Entry({ entry }: { entry: TimelineEntry }) {
         )}
         <span className="text-xs font-medium text-teal-800 uppercase">{typeLabel(entry.type)}</span>
         <strong>{entry.title}</strong>
-        <SourceLabel
+        <SourceBadge
           sourceType={entry.sourceType}
           sourceDocumentDeletedAt={entry.sourceDocumentDeletedAt}
         />

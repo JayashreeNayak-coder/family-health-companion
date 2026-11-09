@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { errorMessage } from '../../api/client'
 import { getFamily, type FamilyMember } from '../../api/families'
 import { deleteGrant, listGrants, putGrant, type AccessLevel, type Grant, type Profile } from '../../api/profiles'
-import { Card, dangerButtonClass, ErrorNote, inputClass } from '../../components/ui'
+import { Card, compactSelectClass, dangerButtonClass, ErrorNote, inputClass } from '../../components/ui'
 
 const LEVELS: { value: AccessLevel; label: string }[] = [
   { value: 'VIEW', label: 'View' },
@@ -71,7 +71,7 @@ export function AccessPanel({ profile }: { profile: Profile }) {
               <span className="flex items-center gap-2">
                 <select
                   aria-label={`Access for ${grant.displayName}`}
-                  className="rounded border border-slate-300 px-2 py-1"
+                  className={compactSelectClass}
                   value={grant.level}
                   onChange={(event) =>
                     void run(() =>

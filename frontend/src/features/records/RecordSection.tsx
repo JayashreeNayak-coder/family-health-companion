@@ -19,7 +19,9 @@ import {
 } from '../../components/ui'
 import { Attachments } from '../documents/Attachments'
 import type { FieldConfig, ResourceConfig } from './resources'
-import { SourceLabel } from './SourceLabel'
+import { SourceBadge } from '../../components/Badge'
+import { useConfirm } from '../../components/Dialog'
+import { useToast } from '../../components/Toast'
 
 type Props = {
   profileId: string
@@ -66,6 +68,8 @@ export function RecordSection({ profileId, canEdit, resource, renderItemExtras }
   const [error, setError] = useState<string | null>(null)
   const [revision, setRevision] = useState(0)
   const [editing, setEditing] = useState<RecordItem | 'new' | null>(null)
+  const [confirm, confirmDialog] = useConfirm()
+  const toast = useToast()
   const [attachments, setAttachments] = useState<Attachment[]>([])
   const recordType = resource.recordType
 
@@ -98,12 +102,18 @@ export function RecordSection({ profileId, canEdit, resource, renderItemExtras }
   }
 
   async function handleDelete(item: RecordItem) {
-    if (!window.confirm(`Permanently delete this ${resource.singular}? This can't be undone.`)) {
+    const confirmed = await confirm({
+      title: `Delete this ${resource.singular}?`,
+      message: `${titleOf(resource, item)} will be permanently deleted. This can't be undone.`,
+      confirmLabel: 'Delete',
+    })
+    if (!confirmed) {
       return
     }
     setError(null)
     try {
       await deleteRecord(profileId, resource.path, item.id)
+      toast('Deleted')
       reload()
     } catch (failure) {
       setError(errorMessage(failure))
@@ -112,6 +122,7 @@ export function RecordSection({ profileId, canEdit, resource, renderItemExtras }
 
   return (
     <Card title={resource.title}>
+      {confirmDialog}
       <ErrorNote message={error} />
       {!items && !error && <p role="status">Loading…</p>}
       {items && items.length === 0 && (
@@ -126,7 +137,7 @@ export function RecordSection({ profileId, canEdit, resource, renderItemExtras }
               <div className="flex flex-wrap items-center gap-2">
                 <strong>{titleOf(resource, item)}</strong>
                 {resource.hasProvenance && (
-                  <SourceLabel
+                  <SourceBadge
                     sourceType={item.sourceType}
                     sourceDocumentDeletedAt={item.sourceDocumentDeletedAt}
                   />
@@ -166,7 +177,7 @@ export function RecordSection({ profileId, canEdit, resource, renderItemExtras }
               )}
               {renderItemExtras?.(item)}
               {canEdit && (
-                <div className="mt-2 flex gap-2">
+                <div className="mt-2 flex flex-wrap gap-2">
                   <button
                     type="button"
                     className={secondaryButtonClass}
@@ -200,7 +211,10 @@ export function RecordSection({ profileId, canEdit, resource, renderItemExtras }
           profileId={profileId}
           resource={resource}
           item={editing === 'new' ? null : editing}
-          onSaved={reload}
+          onSaved={() => {
+            toast('Saved')
+            reload()
+          }}
           onCancel={() => setEditing(null)}
         />
       )}
@@ -345,7 +359,7 @@ function RecordForm({
         </label>
       )}
       <ErrorNote message={error} />
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <button type="submit" disabled={busy} className={primaryButtonClass}>
           Save
         </button>

@@ -200,16 +200,19 @@ describe('Dashboard', () => {
       'GET /profiles/p1': { status: 200, body: profile },
       'DELETE /profiles/p1': { status: 204 },
     })
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
     render(<Dashboard />)
     fireEvent.click(await screen.findByRole('button', { name: 'Child Synthetic' }))
     await screen.findByRole('button', { name: 'Delete profile' })
 
     click('Delete profile')
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Cancel' }))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     expect(stub.mock.calls.some(([, init]) => init?.method === 'DELETE')).toBe(false)
 
-    confirm.mockReturnValue(true)
     click('Delete profile')
+    const dialog = screen.getByRole('dialog', { name: 'Delete Child Synthetic?' })
+    expect(dialog).toHaveTextContent("can't be undone")
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Delete profile' }))
 
     await screen.findByRole('heading', { name: 'Health profiles' })
     expect(stub.mock.calls.some(([, init]) => init?.method === 'DELETE')).toBe(true)
