@@ -96,7 +96,19 @@ test('captures every page', async ({ page }, info) => {
   await page.goto('/')
   await shot(page, '02-home', info.project.name)
 
-  await page.getByRole('button', { name: 'Ravi Demo' }).first().click()
+  await page.getByRole('button', { name: 'Invite someone' }).click()
+  await expect(page.getByRole('dialog')).toBeVisible()
+  await page.screenshot({ path: `e2e/screenshots/${info.project.name}/02a-invite-dialog.png` })
+  await page.keyboard.press('Escape')
+
+  if (info.project.name === 'phone') {
+    await page.getByRole('button', { name: 'Open menu' }).click()
+    await page.getByRole('dialog', { name: 'Menu' }).getByRole('link', { name: 'Ravi Demo' }).waitFor()
+    await page.screenshot({ path: `e2e/screenshots/${info.project.name}/02b-phone-menu.png` })
+    await page.keyboard.press('Escape')
+  }
+
+  await page.getByRole('main').getByRole('link', { name: 'Ravi Demo' }).click()
   const tabs = [
     'Details',
     'Health history',
@@ -109,11 +121,14 @@ test('captures every page', async ({ page }, info) => {
     'Access',
   ]
   for (const [index, tab] of tabs.entries()) {
-    await page.getByRole('navigation', { name: 'Profile sections' }).getByRole('button', { name: tab }).click()
+    await page.getByRole('navigation', { name: 'Profile sections' }).getByRole('link', { name: tab }).click()
     await shot(page, `${String(index + 3).padStart(2, '0')}-profile-${tab.toLowerCase().replaceAll(' ', '-')}`, info.project.name)
   }
 
-  await page.getByRole('navigation', { name: 'Profile sections' }).getByRole('button', { name: 'Health history' }).click()
+  // A page address survives a refresh.
+  await page.getByRole('navigation', { name: 'Profile sections' }).getByRole('link', { name: 'Health history' }).click()
+  await page.reload()
+  await expect(page.getByRole('link', { name: 'Health history', exact: true })).toHaveAttribute('aria-current', 'page')
   await page.getByRole('button', { name: /^Delete Penicillin/ }).click()
   await expect(page.getByRole('dialog')).toBeVisible()
   await page.screenshot({ path: `e2e/screenshots/${info.project.name}/20-confirm-dialog.png` })

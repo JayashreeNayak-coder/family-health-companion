@@ -1,6 +1,7 @@
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { page, problem, requestBody, stubApi } from '../../test/stubApi'
+import { App } from '../../App'
 import { Dashboard } from './Dashboard'
 
 const family = { id: 'f1', name: 'Synthetic Family', role: 'MANAGER' }
@@ -27,6 +28,16 @@ function type(label: string, value: string) {
 
 function click(name: string) {
   fireEvent.click(screen.getByRole('button', { name }))
+}
+
+const signedIn = { status: 200, body: { id: 'a1', email: 'sam@example.test', displayName: 'Sam' } }
+
+/** Opens a profile from Home through the whole app, as a user would. */
+async function openProfileFromHome(name: string) {
+  render(<App />)
+  const main = await screen.findByRole('main')
+  fireEvent.click(await within(main).findByRole('link', { name }))
+  expect(window.location.pathname).toBe('/profiles/p1')
 }
 
 describe('Dashboard', () => {
@@ -65,6 +76,7 @@ describe('Dashboard', () => {
     click('Create family')
 
     expect(await screen.findByRole('heading', { name: 'Synthetic Family' })).toBeInTheDocument()
+    expect(screen.getByText('You are a manager')).toBeInTheDocument()
     expect(requestBody(stub, 'POST', '/families')).toEqual({ name: 'Synthetic Family' })
   })
 
@@ -77,12 +89,19 @@ describe('Dashboard', () => {
     })
     render(<Dashboard />)
     await screen.findByRole('heading', { name: 'Synthetic Family' })
+    expect(screen.getByText(/No profiles in this family/)).toBeInTheDocument()
 
+    click('Add a person')
+    expect(screen.getByRole('dialog', { name: 'Add a person to Synthetic Family' })).toBeInTheDocument()
     type('Full name', 'Child Synthetic')
     type('Who is this for?', 'DEPENDENT')
     click('Add profile')
 
-    expect(await screen.findByRole('button', { name: 'Child Synthetic' })).toBeInTheDocument()
+    const card = await screen.findByRole('link', { name: 'Child Synthetic' })
+    expect(card).toHaveAttribute('href', '/profiles/p1')
+    expect(card).toHaveTextContent('Dependent')
+    expect(card).toHaveTextContent('You manage')
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     expect(requestBody(stub, 'POST', '/families/f1/profiles')).toEqual({
       fullName: 'Child Synthetic',
       dateOfBirth: null,
@@ -99,7 +118,8 @@ describe('Dashboard', () => {
     render(<Dashboard />)
     await screen.findByRole('heading', { name: 'Synthetic Family' })
 
-    expect(screen.queryByRole('button', { name: 'Create invitation' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Invite someone' })).not.toBeInTheDocument()
+    click('Add a person')
     expect(within(screen.getByLabelText('Who is this for?')).queryByText('A dependent')).toBeNull()
   })
 
@@ -113,13 +133,20 @@ describe('Dashboard', () => {
       },
     })
     render(<Dashboard />)
+    const writeText = vi.fn(() => Promise.resolve())
+    vi.stubGlobal('navigator', { ...navigator, clipboard: { writeText } })
     await screen.findByRole('heading', { name: 'Synthetic Family' })
 
+    click('Invite someone')
     type('Their email', 'new@example.test')
     click('Create invitation')
 
     expect(await screen.findByText('code-1')).toBeInTheDocument()
     expect(screen.getByText(/shown only once/)).toBeInTheDocument()
+
+    click('Copy')
+    expect(await screen.findByRole('button', { name: 'Copied' })).toBeInTheDocument()
+    expect(writeText).toHaveBeenCalledWith('code-1')
   })
 
   it('asksTheAdultWhatAccessOthersKeepWhenAnInvitationLinksAProfile', async () => {
@@ -163,15 +190,14 @@ describe('Dashboard', () => {
     stubApi({
       'GET /profiles?size=100': page([viewOnly]),
       'GET /profiles/p1': { status: 200, body: viewOnly },
+      'GET /auth/me': signedIn,
     })
-    render(<Dashboard />)
-
-    fireEvent.click(await screen.findByRole('button', { name: 'Child Synthetic' }))
+    await openProfileFromHome('Child Synthetic')
 
     expect(await screen.findByText(/view-only access/)).toBeInTheDocument()
     expect(screen.getByText('Not recorded')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Save details' })).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Access' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Access' })).not.toBeInTheDocument()
   })
 
   it('managesAccessAndShowsTheLastManagerConflict', async () => {
@@ -184,10 +210,11 @@ describe('Dashboard', () => {
       },
       'GET /families/f1': { status: 200, body: familyDetail },
       'DELETE /profiles/p1/grants/a1': problem(409, 'LAST_MANAGER', 'At least one person must keep manage access'),
+      'GET /auth/me': signedIn,
     })
-    render(<Dashboard />)
-    fireEvent.click(await screen.findByRole('button', { name: 'Child Synthetic' }))
-    fireEvent.click(await screen.findByRole('button', { name: 'Access' }))
+    await openProfileFromHome('Child Synthetic')
+    fireEvent.click(await screen.findByRole('link', { name: 'Access' }))
+    expect(window.location.pathname).toBe('/profiles/p1/access')
 
     fireEvent.click(await screen.findByRole('button', { name: 'Remove' }))
 
@@ -199,9 +226,9 @@ describe('Dashboard', () => {
       'GET /profiles?size=100': page([profile]),
       'GET /profiles/p1': { status: 200, body: profile },
       'DELETE /profiles/p1': { status: 204 },
+      'GET /auth/me': signedIn,
     })
-    render(<Dashboard />)
-    fireEvent.click(await screen.findByRole('button', { name: 'Child Synthetic' }))
+    await openProfileFromHome('Child Synthetic')
     await screen.findByRole('button', { name: 'Delete profile' })
 
     click('Delete profile')
@@ -214,7 +241,8 @@ describe('Dashboard', () => {
     expect(dialog).toHaveTextContent("can't be undone")
     fireEvent.click(within(dialog).getByRole('button', { name: 'Delete profile' }))
 
-    await screen.findByRole('heading', { name: 'Health profiles' })
+    await waitFor(() => expect(window.location.pathname).toBe('/'))
+    await screen.findByText('Welcome, Sam')
     expect(stub.mock.calls.some(([, init]) => init?.method === 'DELETE')).toBe(true)
   })
 })

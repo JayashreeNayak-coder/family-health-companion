@@ -121,7 +121,7 @@ describe('App', () => {
     render(<App />)
     await screen.findByRole('heading', { name: 'Sign in' })
 
-    submit('New here? Create an account')
+    fireEvent.click(screen.getByRole('link', { name: 'Create an account' }))
     type('Your name', 'Sam Synthetic')
     type('Email', 'sam@example.test')
     type('Password', 'synthetic-password-1')
@@ -145,7 +145,7 @@ describe('App', () => {
     render(<App />)
     await screen.findByRole('heading', { name: 'Sign in' })
 
-    submit('New here? Create an account')
+    fireEvent.click(screen.getByRole('link', { name: 'Create an account' }))
     type('Your name', 'Sam Synthetic')
     type('Email', 'sam@example.test')
     type('Password', 'short')
@@ -163,7 +163,7 @@ describe('App', () => {
     render(<App />)
     await screen.findByRole('heading', { name: 'Sign in' })
 
-    submit('New here? Create an account')
+    fireEvent.click(screen.getByRole('link', { name: 'Create an account' }))
     type('Your name', 'Sam Synthetic')
     type('Email', 'sam@example.test')
     type('Password', 'synthetic-password-1')
