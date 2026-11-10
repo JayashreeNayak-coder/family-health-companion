@@ -30,13 +30,18 @@
 | Stored sessions | Spring Session JDBC | Sessions survive restarts and can be revoked |
 | Disabled accounts | Checked on every request, which ends any open session | Disabling takes effect immediately |
 | Client address | `X-Forwarded-For` is trusted only from private network addresses (nginx) | Clients can't fake an address to escape the IP limit |
+| Password reset | Emailed single-use link (Gmail SMTP, D-028), valid 30 minutes, at most 3 an hour per account. Only the token's hash is stored, and the token sits after `#` in the link so it never reaches a server log or Referer. The request answers the same for any email, and the email is sent in the background so timing doesn't tell either. Using a link ends every session of the account. | Recovery without an administrator, without revealing which emails have accounts |
+| Google sign-in | OpenID Connect through Spring Security, on only when both Google keys are set. The app keeps its own session holding only the account ID. A new Google-verified email creates an account; a matching verified email links to the existing account; an unverified email is refused. An account already linked to another Google ID is never taken over. | Lets families sign in with Google while keeping one account per email (D-028) |
 
 **Known limitations:**
 - Rate limit counters are held in memory, so a restart clears them and they aren't shared between instances. This suits the single-instance prototype.
 - Someone who knows an email can block that account's login for 15 minutes by failing repeatedly.
 - `/auth/register` has no rate limit, so it can be used to discover registered emails or to consume CPU through password hashing. This should be closed before going online in Phase 3.
 
-Deferred, as `03-system-design.md` section 7 allows: multi-factor login, email verification, and self-service password recovery. The demo environment resets passwords through an administrator procedure.
+- Password reset requests are limited per account, not per address, so someone can make the app send up to 3 emails an hour to any registered address.
+- With Gmail SMTP, emails come from a personal Gmail address and are limited by Gmail's daily sending cap. A real sending domain belongs with Phase 3.
+
+Deferred, as `03-system-design.md` section 7 allows: multi-factor login and email verification for password accounts. Self-service password recovery was added after Phase 16 (D-028).
 
 ## 3. Authorization model
 

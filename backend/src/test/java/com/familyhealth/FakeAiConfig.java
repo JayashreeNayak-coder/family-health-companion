@@ -4,7 +4,7 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 
-/** Every integration test uses the fake provider, so no test can reach a real AI service. */
+/** Every integration test uses fake providers, so no test can reach a real AI service or mail server. */
 @TestConfiguration(proxyBeanMethods = false)
 class FakeAiConfig {
 
@@ -24,6 +24,13 @@ class FakeAiConfig {
 	@Primary
 	FakeSummaryGenerator fakeSummaryGenerator() {
 		return new FakeSummaryGenerator();
+	}
+
+	/** Not AI, but the same idea: no test can send a real email. */
+	@Bean
+	@Primary
+	FakeEmailSender fakeEmailSender() {
+		return new FakeEmailSender();
 	}
 
 }

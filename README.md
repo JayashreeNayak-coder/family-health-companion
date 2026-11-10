@@ -44,6 +44,33 @@ AI reading uses Google Gemini. Without a key, the app works normally and the **R
 
 On Gemini's free tier, Google may use what you send to improve its products, and people may read it. Upload synthetic documents only.
 
+### Optional: password reset emails (Gmail)
+
+Without a mail account, the backend started with the `dev` profile writes each reset email, with its link, to the backend console instead. To send real emails:
+
+1. Turn on 2-Step Verification for the Gmail account, then create an **app password** at https://myaccount.google.com/apppasswords.
+2. In PowerShell, run `setx MAIL_USERNAME "your.address@gmail.com"` and `setx MAIL_PASSWORD "the-16-letter-app-password"`, then open a **new** terminal before starting the backend.
+
+### Optional: sign in with Google
+
+The **Continue with Google** button appears only when both keys are set.
+
+1. In Google Cloud Console (https://console.cloud.google.com), create a project, then open **APIs & Services → OAuth consent screen**. Choose **External**, fill in the app name and your email, and add yourself (and any testers) under **Test users**.
+2. Open **Credentials → Create credentials → OAuth client ID**, type **Web application**.
+3. Under **Authorized redirect URIs**, add `http://localhost:5173/login/oauth2/code/google`. Add the real address's `/login/oauth2/code/google` once the app is online.
+4. In PowerShell, run `setx GOOGLE_CLIENT_ID "..."` and `setx GOOGLE_CLIENT_SECRET "..."`, then open a **new** terminal before starting the backend.
+
+Sign in through `http://localhost:5173`, the frontend's address, so Google's return address matches. Never put these values in a file in this repository or paste them into a chat.
+
+### If the Google button or reset emails don't appear
+
+`setx` only reaches programs started **after** it runs. A terminal inside VS Code inherits VS Code's environment, so close VS Code completely and reopen it (or use a new PowerShell window outside it), then restart the backend. At startup the backend log says which features are on:
+
+- `Google sign-in is on`, or `Google sign-in is off: ...`.
+- `Email sending is on`, or `Email sending is off: ...` (the reset link is then printed in the backend log).
+- `MAIL_USERNAME is not an email address ...`: set it to the full Gmail address.
+- After a reset request, `Email could not be sent: MailAuthenticationException ...` means Gmail refused the address or password. `MAIL_PASSWORD` must be the 16-letter app password, not the account's normal password.
+
 ### 3. Start the frontend
 
 In a second terminal:

@@ -70,6 +70,11 @@ Phase 4 uses a server-side session in a cookie, with CSRF protection.
 | POST | `/auth/logout` | Signed in | None | 204 |
 | GET | `/auth/me` | Signed in | None | 200, account |
 | GET | `/auth/csrf` | Public | None | 200, `headerName` and `token` |
+| GET | `/auth/providers` | Public | None | 200, `{ "google": true/false }`: whether Google sign-in is switched on |
+| POST | `/auth/password-reset/request` | Public | `email` | 202 with no body, whether or not the email has an account. Sends a link only for an active account, at most 3 an hour. |
+| POST | `/auth/password-reset/confirm` | Public | `token`, `newPassword` | 204. Sets the password, uses up the link, and ends every session of the account. 400 `RESET_LINK_INVALID` for an unknown, used, or expired link. |
+| GET | `/oauth2/authorization/google` | Public, only with Google keys | None | 302 to Google. Not under `/api`: it is a page change, not a fetch. |
+| GET | `/login/oauth2/code/google` | Public, only with Google keys | Google's `code` and `state` | 302 to the app's home, signed in, or to `/sign-in?google=<reason>` |
 
 An account response is `id`, `email`, and `displayName`.
 

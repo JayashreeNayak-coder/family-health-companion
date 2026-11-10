@@ -44,6 +44,17 @@ final class AuthDtos {
 
 	}
 
+	record PasswordResetRequest(@NotBlank @Email @Size(max = 254) String email) {
+	}
+
+	/** The token comes from the emailed link. */
+	record PasswordResetConfirmation(@NotBlank @Size(max = 200) String token, @ValidPassword String newPassword) {
+	}
+
+	/** Which ways of signing in are switched on, so the page shows only those. */
+	record ProvidersResponse(boolean google) {
+	}
+
 	record CsrfResponse(String headerName, String token) {
 	}
 

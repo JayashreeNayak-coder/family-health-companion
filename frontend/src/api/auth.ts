@@ -29,3 +29,21 @@ export function login(credentials: Credentials): Promise<Account> {
 export function logout(): Promise<void> {
   return apiPost<void>('/auth/logout')
 }
+
+/** Which sign-in methods are switched on. Google only when its keys are set on the server. */
+export async function fetchProviders(): Promise<{ google: boolean }> {
+  try {
+    return await apiGet<{ google: boolean }>('/auth/providers')
+  } catch {
+    return { google: false }
+  }
+}
+
+/** Always succeeds the same way, whether or not the email has an account. */
+export function requestPasswordReset(email: string): Promise<void> {
+  return apiPost<void>('/auth/password-reset/request', { email })
+}
+
+export function confirmPasswordReset(token: string, newPassword: string): Promise<void> {
+  return apiPost<void>('/auth/password-reset/confirm', { token, newPassword })
+}

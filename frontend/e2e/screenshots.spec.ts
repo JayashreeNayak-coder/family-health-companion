@@ -108,6 +108,11 @@ async function shot(page: Page, name: string, projectName: string) {
 test('captures every page', async ({ page }, info) => {
   await page.goto('/')
   await shot(page, '01-sign-in', info.project.name)
+  await page.getByRole('button', { name: 'Show password' }).click()
+  await page.goto('/forgot-password')
+  await shot(page, '01a-forgot-password', info.project.name)
+  await page.goto('/reset-password#token=synthetic-token')
+  await shot(page, '01b-reset-password', info.project.name)
 
   await seed(page.request)
   await page.goto('/')

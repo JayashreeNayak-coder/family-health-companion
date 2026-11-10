@@ -5,6 +5,7 @@ import { Button } from './components/Button'
 import { Loading } from './components/Feedback'
 import { ToastProvider } from './components/Toast'
 import { AuthPage } from './features/auth/AuthPage'
+import { ForgotPasswordPage, ResetPasswordPage } from './features/auth/PasswordResetPages'
 import { HomePage } from './features/home/HomePage'
 import { MealsPage } from './features/meals/MealsPage'
 import { ProfilePage } from './features/profiles/ProfilePage'
@@ -19,8 +20,9 @@ type Session =
   | { state: 'signedOut' }
   | { state: 'signedIn'; account: Account }
 
+/** Pages for signed-out visitors. A signed-in visitor at one of them goes home. */
 function isAuthRoute(route: Route) {
-  return route.name === 'signIn' || route.name === 'register'
+  return route.name === 'signIn' || route.name === 'register' || route.name === 'forgotPassword'
 }
 
 function Centered({ children }: { children: ReactNode }) {
@@ -40,6 +42,8 @@ export function App() {
   const route = useRoute()
   const [session, setSession] = useState<Session>({ state: 'loading' })
   const [attempt, setAttempt] = useState(0)
+  // Shown on the sign-in page after a password reset.
+  const [notice, setNotice] = useState<string | null>(null)
 
   useEffect(() => {
     let ignore = false
@@ -94,13 +98,30 @@ export function App() {
         </div>
       </Centered>
     )
-  } else if (session.state === 'signedOut') {
+  } else if (route.name === 'resetPassword') {
+    // Works signed in or out: a reset signs the account out everywhere anyway.
     content = (
-      <AuthPage
-        mode={route.name === 'register' ? 'register' : 'login'}
-        onSignedIn={(account) => setSession({ state: 'signedIn', account })}
+      <ResetPasswordPage
+        onDone={(message) => {
+          setNotice(message)
+          setSession({ state: 'signedOut' })
+        }}
       />
     )
+  } else if (session.state === 'signedOut') {
+    content =
+      route.name === 'forgotPassword' ? (
+        <ForgotPasswordPage />
+      ) : (
+        <AuthPage
+          mode={route.name === 'register' ? 'register' : 'login'}
+          notice={notice}
+          onSignedIn={(account) => {
+            setNotice(null)
+            setSession({ state: 'signedIn', account })
+          }}
+        />
+      )
   } else {
     const account = session.account
     content = (

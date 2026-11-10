@@ -23,8 +23,13 @@ class UserAccount {
 	@Column(nullable = false)
 	private String email;
 
-	@Column(name = "password_hash", nullable = false)
+	/** Null for an account made with Google until the user sets a password through a reset. */
+	@Column(name = "password_hash")
 	private String passwordHash;
+
+	/** Google's stable ID for the person ("sub"), once they have signed in with Google. */
+	@Column(name = "google_subject")
+	private String googleSubject;
 
 	@Column(name = "display_name", nullable = false)
 	private String displayName;
@@ -51,6 +56,25 @@ class UserAccount {
 		this.passwordHash = passwordHash;
 		this.displayName = displayName;
 		this.status = AccountStatus.ACTIVE;
+	}
+
+	/** An account created by signing in with Google: no password yet. */
+	static UserAccount fromGoogle(String email, String googleSubject, String displayName) {
+		UserAccount account = new UserAccount(email, null, displayName);
+		account.googleSubject = googleSubject;
+		return account;
+	}
+
+	void changePassword(String passwordHash) {
+		this.passwordHash = passwordHash;
+	}
+
+	void linkGoogle(String googleSubject) {
+		this.googleSubject = googleSubject;
+	}
+
+	String googleSubject() {
+		return googleSubject;
 	}
 
 	@PrePersist

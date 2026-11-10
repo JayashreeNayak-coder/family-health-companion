@@ -175,10 +175,10 @@ describe('AppShell', () => {
     render(<App />)
 
     await screen.findByRole('heading', { level: 1, name: 'Child Synthetic' })
-    expect(document.title).toBe('Child Synthetic · Lab results · Family Health Companion')
+    await waitFor(() => expect(document.title).toBe('Child Synthetic · Lab results · Family Health Companion'))
     fireEvent.click(within(screen.getByRole('navigation', { name: 'Main' })).getByRole('link', { name: 'Home' }))
     await screen.findByText('Welcome, Sam Synthetic')
-    expect(document.title).toBe('Home · Family Health Companion')
+    await waitFor(() => expect(document.title).toBe('Home · Family Health Companion'))
   })
 
   it('movesFocusToTheNewPageButKeepsItOnTheTabsWithinAProfile', async () => {

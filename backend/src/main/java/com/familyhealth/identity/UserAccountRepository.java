@@ -8,6 +8,8 @@ interface UserAccountRepository extends JpaRepository<UserAccount, UUID> {
 
 	Optional<UserAccount> findByEmail(String email);
 
+	Optional<UserAccount> findByGoogleSubject(String googleSubject);
+
 	boolean existsByEmail(String email);
 
 	boolean existsByIdAndStatus(UUID id, AccountStatus status);

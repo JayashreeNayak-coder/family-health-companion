@@ -22,6 +22,19 @@ spring:
     jdbc:
       # Flyway owns these tables too.
       initialize-schema: never
+  mail:
+    # Gmail SMTP by default (DECISIONS.md, D-028). Username and app password from the environment only.
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+      mail.smtp.starttls.required: true
+      mail.smtp.connectiontimeout: 10000
+      mail.smtp.timeout: 10000
+      mail.smtp.writetimeout: 10000
 
 server:
   # Trust X-Forwarded-* only from private addresses (nginx), so rate limits see the real client IP.
@@ -36,6 +49,21 @@ server:
         secure: ${SESSION_COOKIE_SECURE:true}
 
 app:
+  # The address people use to open the app. Reset links and the Google redirect are built from it.
+  public-url: ${APP_PUBLIC_URL:http://localhost:5173}
+  mail:
+    # Defaults to MAIL_USERNAME.
+    from: ${MAIL_FROM:}
+    # Development only: with no mail account set, write the message (and its link) to the log.
+    log-when-unconfigured: false
+  password-reset:
+    valid-for: 30m
+    max-per-account-per-hour: 3
+  oauth:
+    google:
+      # Both from the environment only. Without them, Google sign-in is hidden and off.
+      client-id: ${GOOGLE_CLIENT_ID:}
+      client-secret: ${GOOGLE_CLIENT_SECRET:}
   ai:
     # Calls must finish in this time. Retries are bounded by worker.max-attempts.
     timeout: 90s
@@ -68,6 +96,10 @@ app:
     max-failures-per-address: 50
 
 management:
+  health:
+    # Checking the mail server on every health probe would mark the app down when mail is offline.
+    mail:
+      enabled: false
   endpoints:
     web:
       exposure:

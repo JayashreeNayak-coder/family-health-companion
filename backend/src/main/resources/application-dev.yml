@@ -8,6 +8,9 @@ server:
         secure: false
 
 app:
+  mail:
+    # Lets the reset flow be tried locally without a mail account. Never on outside development.
+    log-when-unconfigured: true
   documents:
     # Relative to the backend folder, and ignored by Git.
     storage-dir: ${DOCUMENT_STORAGE_DIR:./data/documents}

@@ -1,9 +1,10 @@
 import { FileCheck2, HeartPulse, ShieldCheck, Users } from 'lucide-react'
-import { useState, type FormEvent } from 'react'
-import { login, register, type Account } from '../../api/auth'
+import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
+import { fetchProviders, login, register, type Account } from '../../api/auth'
 import { ApiError, type FieldError } from '../../api/client'
-import { Button } from '../../components/Button'
+import { Button, buttonClass } from '../../components/Button'
 import { ErrorNote } from '../../components/Feedback'
+import { PasswordInput } from '../../components/PasswordInput'
 import { inputClass } from '../../components/formStyles'
 import { useDocumentTitle } from '../../components/useDocumentTitle'
 import { Link } from '../../router'
@@ -59,13 +60,88 @@ function BrandPanel() {
   )
 }
 
-export function AuthPage({ mode, onSignedIn }: { mode: Mode; onSignedIn: (account: Account) => void }) {
+/** The signed-out frame: the brand panel on wide screens, and the page's own content. */
+export function AuthFrame({ children }: { children: ReactNode }) {
+  return (
+    <div className="grid min-h-screen lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
+      <BrandPanel />
+
+      <div className="flex flex-col px-4 py-8 sm:px-8">
+        <div className="flex items-center gap-2.5 font-semibold text-brand-900 lg:hidden">
+          <span className="grid size-8 place-items-center rounded-lg bg-brand-600 text-white">
+            <HeartPulse aria-hidden="true" className="size-5" />
+          </span>
+          Family Health Companion
+        </div>
+
+        <main className="flex flex-1 items-center justify-center py-10">
+          <section className="w-full max-w-sm">{children}</section>
+        </main>
+
+        <p className="text-center text-xs text-slate-500">
+          Prototype. Use synthetic data only and do not enter real health information.
+        </p>
+      </div>
+    </div>
+  )
+}
+
+/** Why Google sign-in came back to this page, from the backend's redirect (D-028). */
+const GOOGLE_PROBLEMS: Record<string, string> = {
+  'email-not-verified': "Your Google account's email address isn't verified, so it can't be used here.",
+  'account-disabled': 'This account is disabled.',
+  'linked-to-another-google-account': 'This email is already linked to a different Google account.',
+}
+
+function googleProblem(): string | null {
+  const reason = new URLSearchParams(window.location.search).get('google')
+  if (!reason) {
+    return null
+  }
+  return GOOGLE_PROBLEMS[reason] ?? "Google sign-in didn't finish. Please try again."
+}
+
+function GoogleMark() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 48 48" className="size-5">
+      <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
+      <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
+      <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />
+      <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
+    </svg>
+  )
+}
+
+export function AuthPage({
+  mode,
+  notice = null,
+  onSignedIn,
+}: {
+  mode: Mode
+  /** A message from the previous page, such as after a password reset. */
+  notice?: string | null
+  onSignedIn: (account: Account) => void
+}) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [displayName, setDisplayName] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [fieldErrors, setFieldErrors] = useState<FieldError[]>([])
+  const [google, setGoogle] = useState(false)
+  const [googleError] = useState(googleProblem)
+
+  useEffect(() => {
+    let ignore = false
+    fetchProviders().then((providers) => {
+      if (!ignore) {
+        setGoogle(providers.google)
+      }
+    })
+    return () => {
+      ignore = true
+    }
+  }, [])
 
   const isRegister = mode === 'register'
   useDocumentTitle(isRegister ? 'Create an account' : 'Sign in')
@@ -108,105 +184,116 @@ export function AuthPage({ mode, onSignedIn }: { mode: Mode; onSignedIn: (accoun
   const labelClass = 'block text-sm font-medium text-slate-800'
 
   return (
-    <div className="grid min-h-screen lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
-      <BrandPanel />
+    <AuthFrame>
+      <h1 className="text-2xl font-semibold text-slate-900">
+        {isRegister ? 'Create an account' : 'Sign in'}
+      </h1>
+      <p className="mt-1 text-sm text-slate-600">
+        {isRegister
+          ? 'Set up an account, then create a family or join one with a code.'
+          : 'Welcome back. Sign in to see your family’s profiles.'}
+      </p>
 
-      <div className="flex flex-col px-4 py-8 sm:px-8">
-        <div className="flex items-center gap-2.5 font-semibold text-brand-900 lg:hidden">
-          <span className="grid size-8 place-items-center rounded-lg bg-brand-600 text-white">
-            <HeartPulse aria-hidden="true" className="size-5" />
-          </span>
-          Family Health Companion
+      {notice && (
+        <p role="status" className="mt-6 rounded-lg border border-brand-200 bg-brand-50 px-3 py-2 text-sm text-brand-900">
+          {notice}
+        </p>
+      )}
+      <ErrorNote message={googleError} />
+
+      {google && (
+        <>
+          {/* A real page change: the browser goes to Google and comes back signed in. */}
+          <a href="/oauth2/authorization/google" className={`${buttonClass('secondary', 'md')} mt-8 w-full`}>
+            <GoogleMark />
+            Continue with Google
+          </a>
+          <div className="mt-6 flex items-center gap-3 text-xs font-medium text-slate-500 uppercase">
+            <span className="h-px flex-1 bg-slate-200" />
+            or use email
+            <span className="h-px flex-1 bg-slate-200" />
+          </div>
+        </>
+      )}
+
+      <form className={google ? 'mt-6 space-y-5' : 'mt-8 space-y-5'} onSubmit={handleSubmit}>
+        {isRegister && (
+          <div>
+            <label htmlFor="displayName" className={labelClass}>
+              Your name
+            </label>
+            <input
+              id="displayName"
+              className={inputClass}
+              autoComplete="name"
+              required
+              maxLength={100}
+              value={displayName}
+              onChange={(event) => setDisplayName(event.target.value)}
+            />
+            {fieldError('displayName')}
+          </div>
+        )}
+
+        <div>
+          <label htmlFor="email" className={labelClass}>
+            Email
+          </label>
+          <input
+            id="email"
+            className={inputClass}
+            type="email"
+            autoComplete="email"
+            required
+            maxLength={254}
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+          />
+          {fieldError('email')}
         </div>
 
-        <main className="flex flex-1 items-center justify-center py-10">
-          <section className="w-full max-w-sm">
-            <h1 className="text-2xl font-semibold text-slate-900">
-              {isRegister ? 'Create an account' : 'Sign in'}
-            </h1>
-            <p className="mt-1 text-sm text-slate-600">
-              {isRegister
-                ? 'Set up an account, then create a family or join one with a code.'
-                : 'Welcome back. Sign in to see your family’s profiles.'}
-            </p>
-
-            <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
-              {isRegister && (
-                <div>
-                  <label htmlFor="displayName" className={labelClass}>
-                    Your name
-                  </label>
-                  <input
-                    id="displayName"
-                    className={inputClass}
-                    autoComplete="name"
-                    required
-                    maxLength={100}
-                    value={displayName}
-                    onChange={(event) => setDisplayName(event.target.value)}
-                  />
-                  {fieldError('displayName')}
-                </div>
-              )}
-
-              <div>
-                <label htmlFor="email" className={labelClass}>
-                  Email
-                </label>
-                <input
-                  id="email"
-                  className={inputClass}
-                  type="email"
-                  autoComplete="email"
-                  required
-                  maxLength={254}
-                  value={email}
-                  onChange={(event) => setEmail(event.target.value)}
-                />
-                {fieldError('email')}
-              </div>
-
-              <div>
-                <label htmlFor="password" className={labelClass}>
-                  Password
-                </label>
-                <input
-                  id="password"
-                  className={inputClass}
-                  type="password"
-                  autoComplete={isRegister ? 'new-password' : 'current-password'}
-                  required
-                  minLength={isRegister ? 12 : undefined}
-                  value={password}
-                  onChange={(event) => setPassword(event.target.value)}
-                />
-                {isRegister && <p className="mt-1 text-sm text-slate-600">At least 12 characters.</p>}
-                {fieldError('password')}
-              </div>
-
-              <ErrorNote message={error} />
-
-              <Button type="submit" variant="primary" size="md" busy={submitting} className="w-full">
-                {submitting ? 'Please wait…' : isRegister ? 'Create account' : 'Sign in'}
-              </Button>
-            </form>
-
-            <p className="mt-6 text-center text-sm text-slate-600">
-              {isRegister ? 'Already have an account? ' : 'New here? '}
+        <div>
+          <div className="flex items-baseline justify-between gap-3">
+            <label htmlFor="password" className={labelClass}>
+              Password
+            </label>
+            {!isRegister && (
               <Link
-                to={isRegister ? '/sign-in' : '/register'}
-                className="font-medium text-brand-700 underline-offset-2 hover:underline"
+                to="/forgot-password"
+                className="text-sm font-medium text-brand-700 underline-offset-2 hover:underline"
               >
-                {isRegister ? 'Sign in' : 'Create an account'}
+                Forgot password?
               </Link>
-            </p>
-          </section>
-        </main>
+            )}
+          </div>
+          <PasswordInput
+            id="password"
+            autoComplete={isRegister ? 'new-password' : 'current-password'}
+            required
+            minLength={isRegister ? 12 : undefined}
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+          />
+          {isRegister && <p className="mt-1 text-sm text-slate-600">At least 12 characters.</p>}
+          {fieldError('password')}
+        </div>
 
-        <p className="text-center text-xs text-slate-500">
-          Prototype. Use synthetic data only and do not enter real health information.
-        </p>
-      </div>
-    </div>
+        <ErrorNote message={error} />
+
+        <Button type="submit" variant="primary" size="md" busy={submitting} className="w-full">
+          {submitting ? 'Please wait…' : isRegister ? 'Create account' : 'Sign in'}
+        </Button>
+      </form>
+
+      <p className="mt-6 text-center text-sm text-slate-600">
+        {isRegister ? 'Already have an account? ' : 'New here? '}
+        <Link
+          to={isRegister ? '/sign-in' : '/register'}
+          className="font-medium text-brand-700 underline-offset-2 hover:underline"
+        >
+          {isRegister ? 'Sign in' : 'Create an account'}
+        </Link>
+      </p>
+    </AuthFrame>
   )
 }

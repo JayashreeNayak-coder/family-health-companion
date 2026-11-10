@@ -71,9 +71,19 @@ Every profile-owned table has `profile_id uuid NOT NULL` referencing `health_pro
 |---|---|---|
 | `id` | uuid | PK |
 | `email` | text | NOT NULL, UNIQUE, stored lowercase |
-| `password_hash` | text | NOT NULL |
+| `password_hash` | text | Nullable since V13: an account made with Google has none until a reset sets one |
+| `google_subject` | text | UNIQUE, nullable. Google's ID for the person, set at the first Google sign-in (V13). A check requires a password or a Google ID. |
 | `display_name` | text | NOT NULL |
 | `status` | text | `ACTIVE`, `DISABLED` |
+
+### `password_reset_token` (V13)
+| Column | Type | Notes |
+|---|---|---|
+| `id` | uuid | PK |
+| `user_account_id` | uuid | FK, ON DELETE CASCADE |
+| `token_hash` | text | UNIQUE. SHA-256 of the emailed token; the token itself is never stored. |
+| `created_at`, `expires_at` | timestamptz | A link lasts 30 minutes |
+| `used_at` | timestamptz | Set when used, or when a newer link replaces it |
 
 ### `family`
 | Column | Type | Notes |

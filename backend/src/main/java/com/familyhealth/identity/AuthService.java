@@ -73,6 +73,7 @@ class AuthService {
 		}
 
 		Optional<UserAccount> found = accounts.findByEmail(email);
+		// An account made with Google may have no password: it checks against the dummy and fails.
 		String hash = found.map(UserAccount::passwordHash).orElse(dummyHash);
 		boolean passwordMatches = passwordEncoder.matches(request.password(), hash);
 

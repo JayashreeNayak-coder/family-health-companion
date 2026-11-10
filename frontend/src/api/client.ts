@@ -59,10 +59,9 @@ async function write<T>(method: string, path: string, body?: unknown): Promise<T
     headers: { 'Content-Type': 'application/json', [csrf.headerName]: csrf.token },
     body: method === 'DELETE' ? undefined : JSON.stringify(body ?? {}),
   })
-  if (response.status === 204) {
-    return undefined as T
-  }
-  return response.json() as Promise<T>
+  // 204, and a 202 that only says "accepted", have no body.
+  const text = await response.text()
+  return (text ? JSON.parse(text) : undefined) as T
 }
 
 /** A multipart upload. The browser sets the multipart Content-Type and boundary itself. */

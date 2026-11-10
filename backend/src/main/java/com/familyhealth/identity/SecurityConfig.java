@@ -4,6 +4,7 @@ import jakarta.servlet.DispatcherType;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.List;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -15,6 +16,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.session.ChangeSessionIdAuthenticationStrategy;
@@ -61,13 +63,24 @@ class SecurityConfig {
 	SecurityFilterChain securityFilterChain(HttpSecurity http, CsrfTokenRepository csrfTokens,
 			SecurityContextRepository contexts, UserAccountRepository accounts, Clock clock, AuthService authService,
 			@Value("${app.session.absolute-timeout}") Duration absoluteTimeout,
-			@Qualifier("handlerExceptionResolver") HandlerExceptionResolver errors) {
+			@Qualifier("handlerExceptionResolver") HandlerExceptionResolver errors,
+			ObjectProvider<ClientRegistrationRepository> googleRegistrations, GoogleSignInHandler googleHandler)
+			throws Exception {
+		ClientRegistrationRepository google = googleRegistrations.getIfAvailable();
 		http
-			.authorizeHttpRequests(requests -> requests
-				.dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
-				.requestMatchers(HttpMethod.POST, "/api/v1/auth/register", "/api/v1/auth/login").permitAll()
-				.requestMatchers(HttpMethod.GET, "/api/v1/auth/csrf", "/actuator/health").permitAll()
-				.anyRequest().authenticated())
+			.authorizeHttpRequests(requests -> {
+				requests.dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
+					.requestMatchers(HttpMethod.POST, "/api/v1/auth/register", "/api/v1/auth/login",
+							"/api/v1/auth/password-reset/request", "/api/v1/auth/password-reset/confirm")
+					.permitAll()
+					.requestMatchers(HttpMethod.GET, "/api/v1/auth/csrf", "/api/v1/auth/providers", "/actuator/health")
+					.permitAll();
+				if (google != null) {
+					requests.requestMatchers(HttpMethod.GET, "/oauth2/authorization/google",
+							GoogleSignInConfig.REDIRECT_PATH).permitAll();
+				}
+				requests.anyRequest().authenticated();
+			})
 			.csrf(csrf -> csrf.csrfTokenRepository(csrfTokens))
 			.securityContext(context -> context.securityContextRepository(contexts))
 			// A signed-out request must not create a session row just to remember where it was going.
@@ -81,6 +94,13 @@ class SecurityConfig {
 				.authenticationEntryPoint((request, response, ex) -> errors.resolveException(request, response, null, ex))
 				.accessDeniedHandler(accessDeniedHandler(authService, errors)))
 			.addFilterAfter(new SessionPolicyFilter(accounts, clock, absoluteTimeout), SecurityContextHolderFilter.class);
+		if (google != null) {
+			// Only when Google keys are set (D-028). The handler swaps Google's login for the app's own session.
+			http.oauth2Login(login -> login.clientRegistrationRepository(google)
+				.loginPage("/sign-in")
+				.successHandler(googleHandler)
+				.failureHandler(googleHandler));
+		}
 		return http.build();
 	}
 

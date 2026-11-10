@@ -25,6 +25,8 @@ export type Route =
   | { name: 'home' }
   | { name: 'signIn' }
   | { name: 'register' }
+  | { name: 'forgotPassword' }
+  | { name: 'resetPassword' }
   | { name: 'meals' }
   | { name: 'profile'; profileId: string; section: ProfileSection }
   | { name: 'notFound' }
@@ -43,6 +45,12 @@ export function parseRoute(pathname: string): Route {
   }
   if (parts.length === 1 && parts[0] === 'register') {
     return { name: 'register' }
+  }
+  if (parts.length === 1 && parts[0] === 'forgot-password') {
+    return { name: 'forgotPassword' }
+  }
+  if (parts.length === 1 && parts[0] === 'reset-password') {
+    return { name: 'resetPassword' }
   }
   if (parts.length === 1 && parts[0] === 'meals') {
     return { name: 'meals' }

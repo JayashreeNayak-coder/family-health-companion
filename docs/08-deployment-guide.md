@@ -126,6 +126,13 @@ The recommended starting point is one small VPS running Docker Compose, with a l
 | `DOCUMENT_STORAGE_DIR` | Private folder for uploaded originals, used until object storage is chosen (`DECISIONS.md`, D-020). Required. The Docker image sets it to a volume. | No |
 | `STORAGE_ENDPOINT`, `STORAGE_BUCKET` | Object storage, once hosting is chosen in Phase 3 | No |
 | `STORAGE_ACCESS_KEY`, `STORAGE_SECRET_KEY` | Object storage, once hosting is chosen in Phase 3 | Yes |
+| `APP_PUBLIC_URL` | The address people open, such as `https://app.example.com`. Reset links and the Google return address are built from it. Default `http://localhost:5173`. | No |
+| `MAIL_USERNAME` | Gmail address that sends reset emails. Without it, no email is sent (the `dev` profile writes the message to the log instead). | No |
+| `MAIL_PASSWORD` | A Gmail **app password** for that address (not the normal password) | Yes |
+| `MAIL_FROM` | Sender shown on emails, default `MAIL_USERNAME` | No |
+| `MAIL_HOST`, `MAIL_PORT` | Default `smtp.gmail.com` and `587` | No |
+| `GOOGLE_CLIENT_ID` | Google OAuth client ID. Google sign-in is on only when this and the secret are set. | No |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth client secret | Yes |
 | `GEMINI_API_KEY` | AI provider key. Without it, AI features report unavailable and everything else works. | Yes |
 | `GEMINI_MODEL` | Gemini model, default `gemini-3.5-flash` | No |
 | `GEMINI_FALLBACK_MODEL` | Tried once when the main model reports high demand, default `gemini-flash-lite-latest`. Empty turns it off. | No |

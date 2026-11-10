@@ -15,6 +15,9 @@ export default defineConfig({
     proxy: {
       '/api': backend,
       '/actuator/health': backend,
+      // Google sign-in: the start link and Google's return address (DECISIONS.md, D-028).
+      '/oauth2/authorization': backend,
+      '/login/oauth2': backend,
     },
   },
   test: {

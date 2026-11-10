@@ -1,9 +1,9 @@
 # Family Health Companion
 ## Project Status
 
-**Last updated:** 2026-11-09
-**Current phase:** Phases 5 to 12 and 14 to 16 complete. UI redesign UI-1 to UI-7 complete and committed. Phase 3 (deployment) is waiting on the owner.
-**Application code:** Accounts, families, profiles and access grants, conditions, allergies, dietary items, emergency contacts, visits, symptoms, medications with schedules and adherence, lab results with trends, food log, document upload with attachments on records, AI reading of documents as a reviewed draft (Gemini), the timeline, and the meal assistant (general and for a family member) with saved recipes and adding a recipe to a food log, and cited record summaries.
+**Last updated:** 2026-11-10
+**Current phase:** Phases 5 to 12 and 14 to 16 complete and committed. Password reset, Google sign-in, and show-password added at the owner's request and committed. UI redesign UI-1 to UI-7 complete and committed. Phase 3 (deployment) is waiting on the owner.
+**Application code:** Accounts (password or Google sign-in, with password reset by email), families, profiles and access grants, conditions, allergies, dietary items, emergency contacts, visits, symptoms, medications with schedules and adherence, lab results with trends, food log, document upload with attachments on records, AI reading of documents as a reviewed draft (Gemini), the timeline, and the meal assistant (general and for a family member) with saved recipes and adding a recipe to a food log, and cited record summaries.
 
 ## Environment
 
@@ -50,9 +50,10 @@
 | UI-5 | Redesign: medications, lab results, timeline | Done |
 | UI-6 | Redesign: documents and AI review | Done |
 | UI-7 | Redesign: accessibility and responsive pass | Done |
-| 14 | General meal assistant | Done (not committed) |
-| 15 | Health-aware meal assistant | Done (not committed) |
-| 16 | Record-based summaries | Done (not committed) |
+| 14 | General meal assistant | Done |
+| 15 | Health-aware meal assistant | Done |
+| 16 | Record-based summaries | Done |
+| Auth+ | Password reset by email, Google sign-in, show-password button (D-028) | Done |
 | 17 | Emergency card | Not started |
 | 18 | PDF export | Not started |
 | 19 | Synthetic demo data, security review, and presentation prep | Not started |
@@ -61,13 +62,13 @@
 
 | Suite | Result | Where |
 |---|---|---|
-| Backend unit tests (46) and integration tests (210) | Pass | Local (temporary PostgreSQL 18). CI: see the Git note below. |
-| Frontend tests (109), lint, type check, build | Pass | Local. CI: see the Git note below. |
+| Backend unit tests (46) and integration tests (223) | Pass | Local (temporary PostgreSQL 18). CI: see the Git note below. |
+| Frontend tests (115), lint, type check, build | Pass | Local. CI: see the Git note below. |
 | Full flow from registration to linking and deleting a profile, through the Vite dev proxy against the real backend | Pass, with `curl` (Phase 8) | Local |
 | Lab trend, food log, upload, download, rejected HTML, 12 MB upload, attachment, and document deletion against the real backend | Pass, with `curl` | Local |
 | Gemini client against a local stand-in server: request shape, key header, timeouts, and error codes | Pass | Local (unit) |
 | A real Gemini extraction of a synthetic prescription PDF, approval of one item, and an injected instruction that was ignored | Pass (`gemini-3.5-flash`) | Local, owner's key |
-| Screenshots of every page at 320, 390, 768, and 1280 px, with no sideways scrolling and no axe WCAG 2.2 A/AA violations (`npm run screenshots`) | Pass (Phase 16), including a summary and Meal ideas in both modes with a stubbed AI answer and a real save to the food log, the phone menu, the invite and record edit dialogs, the lab chart's hover readout, and a page refresh that keeps the open tab | Local, against the owner's running dev backend |
+| Screenshots of every page at 320, 390, 768, and 1280 px, with no sideways scrolling and no axe WCAG 2.2 A/AA violations (`npm run screenshots`) | Pass (after D-028), including the forgot and reset password pages, a summary and Meal ideas in both modes with a stubbed AI answer and a real save to the food log, the phone menu, the invite and record edit dialogs, the lab chart's hover readout, and a page refresh that keeps the open tab | Local, against the owner's running dev backend |
 | Docker image builds, and the auth flow through nginx | Last passed at Phase 4. Only CI can check this. | CI only |
 
 **Git note:** Phases 9 to 12 are local commits. The owner pushes; no CI run has been seen yet, and the owner is checking that Actions is enabled.
@@ -82,6 +83,10 @@
 - The sidebar's profile list doesn't see changes other family members make until the page is reloaded.
 - `/auth/register` has no rate limit. Close this before going online in Phase 3 (`docs/06` section 2).
 - Someone who knows an email can block that account's login for 15 minutes by failing repeatedly (`docs/06` section 2).
+- Google sign-in with the owner's keys was checked on 2026-11-10 up to Google's own sign-in page, which accepted the client ID and return address. The owner hasn't yet finished a full sign-in. The owner's first try showed no button because the backend ran in a terminal opened before `setx`. The backend now logs at startup whether Google sign-in and email are on (README troubleshooting).
+- Reset emails have not been sent through a real Gmail account yet. On 2026-11-10 the owner's `MAIL_USERNAME` wasn't a full email address and `MAIL_PASSWORD` wasn't a 16-letter app password; the owner must correct both.
+- Password reset requests are limited per account (3 an hour), not per address.
+- On phones, a profile's section tabs scroll sideways and the last visible label is cut off.
 - If login fails straight after a successful registration, the user stays on the form, and resubmitting reports the email as taken. They can switch to sign in.
 - `npm audit` reports 10 moderate findings, all in development tools (ESLint's dependencies). Production dependencies report none. The only fix offered downgrades ESLint.
 - Mockito prints a future-JDK warning about self-attaching during tests. Harmless today.
@@ -112,7 +117,8 @@
 2. **Owner:** start the backend from PowerShell as in `README.md`, and try **Read with AI** on a synthetic prescription or lab report.
 3. **Owner:** review `DECISIONS.md`, D-019 and D-020. D-021 (free tier, synthetic data only) is confirmed.
 4. **UI/UX redesign:** done and committed (`9a0d52a`). **Owner:** review `DECISIONS.md`, D-024.
-5. **Phases 14 to 16** (meal assistant and summaries) are done but not committed, at the owner's request. **Owner:** restart the backend (it adds migrations V11 and V12), set `GEMINI_API_KEY`, try **Meal ideas** in both modes and a profile's **Summaries** tab with synthetic records, review `DECISIONS.md`, D-025 to D-027, then ask for a commit. Phase 17 (emergency card) is next; Phase 18 (PDF export) needs a PDF library, which needs the owner's approval.
+5. **Phases 14 to 16** are committed (`41bf1e0`).
+6. **Password reset, Google sign-in, show-password** (D-028) are committed. **Owner:** fix `MAIL_USERNAME`/`MAIL_PASSWORD`, fully restart VS Code, restart the backend, and try both (README troubleshooting). Phase 17 (emergency card) is next; Phase 18 (PDF export) needs a PDF library, which needs the owner's approval.
 
 Decisions the owner must make later:
 

@@ -13,13 +13,14 @@ export function page(items: unknown[]): Reply {
 /**
  * Stubs fetch by "METHOD path". Each route answers with its replies in order, and repeats the
  * last one. The CSRF route is always answered, like the real API. The signed-in home page's two
- * lists default to empty.
+ * lists default to empty, and Google sign-in defaults to off.
  */
 export function stubApi(routes: Record<string, Reply | Reply[]>) {
   const remaining = new Map(
     Object.entries({
       'GET /families?size=100': page([]),
       'GET /profiles?size=100': page([]),
+      'GET /auth/providers': { status: 200, body: { google: false } },
       ...routes,
     }).map(([route, replies]) => [route, [replies].flat()]),
   )

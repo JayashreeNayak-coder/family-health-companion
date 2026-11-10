@@ -5,6 +5,7 @@ import { AiBadge, SourceBadge } from './Badge'
 import { Button } from './Button'
 import { useConfirm } from './Dialog'
 import { EmptyState, Loading } from './Feedback'
+import { PasswordInput } from './PasswordInput'
 import { ToastProvider, useToast } from './Toast'
 
 function ConfirmHarness() {
@@ -108,5 +109,25 @@ describe('design system components', () => {
 
     expect(screen.getByRole('status')).toHaveTextContent('Loading…')
     expect(screen.getByText('No documents yet')).toBeInTheDocument()
+  })
+})
+
+describe('PasswordInput', () => {
+  it('showsAndHidesWhatWasTyped', () => {
+    render(
+      <label>
+        Password
+        <PasswordInput defaultValue="synthetic-secret" />
+      </label>,
+    )
+    const input = screen.getByLabelText('Password')
+    expect(input).toHaveAttribute('type', 'password')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Show password' }))
+    expect(input).toHaveAttribute('type', 'text')
+    expect(screen.getByRole('button', { name: 'Show password' })).toHaveAttribute('aria-pressed', 'true')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Show password' }))
+    expect(input).toHaveAttribute('type', 'password')
   })
 })
