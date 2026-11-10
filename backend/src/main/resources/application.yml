@@ -54,7 +54,7 @@ app:
   mail:
     # Defaults to MAIL_USERNAME.
     from: ${MAIL_FROM:}
-    # Development only: with no mail account set, write the message (and its link) to the log.
+    # Development only: when no mail account is set, or sending fails, write the message (and its link) to the log.
     log-when-unconfigured: false
   password-reset:
     valid-for: 30m
@@ -94,6 +94,11 @@ app:
     max-failures-per-account: 10
     # Higher, because a classroom or household shares one address.
     max-failures-per-address: 50
+  emergency-card:
+    # Public card reads per IP address (docs/06 section 6). Found or not, every read counts.
+    rate-limit:
+      window: 1m
+      max-per-address: 30
 
 management:
   health:

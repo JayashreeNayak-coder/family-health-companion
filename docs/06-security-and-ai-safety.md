@@ -98,7 +98,10 @@ The SRS requires "family-member-specific access permissions" but does not define
 - The token is 256 bits of secure randomness. Only its hash is stored, and the full link is shown only when created.
 - The user can disable the card or rotate the link at any time, and both take effect immediately.
 - The card has no route to the rest of the profile, the documents, or the family.
-- The endpoint is rate limited and blocks caching and indexing.
+- The endpoint is rate limited (30 reads a minute per IP address, found or not) and blocks caching and indexing. The page also sets a `robots` `noindex` tag.
+- The token is in the link's `#` part, so opening the page doesn't send it to a server log. Malformed, unknown, disabled, and replaced links all return the same 404.
+- Turning the card off forgets the token hash, so turning it on again always makes a new link.
+- Changes (save, on, off, new link) are audited without their content. Views aren't, because anyone with a link could fill the table.
 
 ## 7. Audit trail
 

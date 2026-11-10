@@ -74,6 +74,9 @@ class SecurityConfig {
 							"/api/v1/auth/password-reset/request", "/api/v1/auth/password-reset/confirm")
 					.permitAll()
 					.requestMatchers(HttpMethod.GET, "/api/v1/auth/csrf", "/api/v1/auth/providers", "/actuator/health")
+					.permitAll()
+					// The emergency card's link is its own key: approved lines of an enabled card only (docs/06 section 6).
+					.requestMatchers(HttpMethod.GET, "/api/v1/public/emergency-cards/*")
 					.permitAll();
 				if (google != null) {
 					requests.requestMatchers(HttpMethod.GET, "/oauth2/authorization/google",

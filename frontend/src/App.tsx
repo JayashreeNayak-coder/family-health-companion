@@ -5,6 +5,7 @@ import { Button } from './components/Button'
 import { Loading } from './components/Feedback'
 import { ToastProvider } from './components/Toast'
 import { AuthPage } from './features/auth/AuthPage'
+import { PublicEmergencyCardPage } from './features/emergencyCard/PublicEmergencyCardPage'
 import { ForgotPasswordPage, ResetPasswordPage } from './features/auth/PasswordResetPages'
 import { HomePage } from './features/home/HomePage'
 import { MealsPage } from './features/meals/MealsPage'
@@ -81,7 +82,10 @@ export function App() {
   }
 
   let content: ReactNode
-  if (session.state === 'loading') {
+  if (route.name === 'emergencyCard') {
+    // Public: the same for everyone, signed in or not, and never inside the app's shell.
+    content = <PublicEmergencyCardPage />
+  } else if (session.state === 'loading') {
     content = (
       <Centered>
         <Loading lines={2} />

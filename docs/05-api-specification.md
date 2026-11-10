@@ -262,6 +262,13 @@ Switching meal modes is a frontend concern: ingredients stay in client state, so
 
 The public endpoint is rate limited and returns `Cache-Control: no-store` and `X-Robots-Tag: noindex`. An unknown token and a disabled card return the same 404. The response has no profile ID, family information, or record IDs.
 
+Phase 17 shapes:
+
+- `PUT` takes `{ version, items: [{ type, text, sourceRecordId? }] }`, with at most 30 items. `version` is null only when the profile has no card yet; a stale version returns 409. `type` is `PERSON` (at most one), `ALLERGY`, `CONDITION`, `MEDICATION`, `EMERGENCY_CONTACT`, or `NOTE`. `sourceRecordId` must name a record of that kind in this profile (400 otherwise), and is not allowed for `PERSON` or `NOTE`. Items are saved in the order sent.
+- `GET` and `PUT` return `{ enabled, linkCreatedAt, items: [{ type, text, sourceRecordId, sourceStatus }], version }`. `sourceStatus` is `NONE`, `CURRENT`, `CHANGED`, or `DELETED`. A profile without a card returns `enabled: false`, no items, and a null version.
+- `enable` and `rotate` return `{ link, card }`. The link is `<public URL>/emergency-card#<token>` and is never returned again. `enable` returns 422 `CARD_EMPTY` for a card with no saved items and 409 `CARD_ALREADY_ENABLED` when it's already on; `rotate` returns 409 `CARD_NOT_ENABLED` when it's off. `disable` returns the card and is safe to repeat. Turning the card on again always makes a new link.
+- The public `GET` returns `{ items: [{ type, text }] }`, at most 30 reads a minute per IP address (429 with `Retry-After` after that).
+
 ## 9. System
 
 | Method | Path | Purpose | Access |

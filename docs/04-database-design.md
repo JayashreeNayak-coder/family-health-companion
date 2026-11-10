@@ -221,13 +221,13 @@ Per-item status allows partial approval. Draft data stays out of the confirmed r
 | `food_log_entry` | `profile_id`, `description` NOT NULL, `meal_type` (`BREAKFAST`, `LUNCH`, `DINNER`, `SNACK`, `OTHER`, or NULL), `occurred_on`, `occurred_time`, `saved_recipe_id` nullable FK (added in Phase 14) |
 | `saved_recipe` | `profile_id`, `created_by`, `title`, `ingredients jsonb` and `steps jsonb` (arrays of text), `mode` (`GENERAL`, `HEALTH_AWARE`), `prompt_version`. Added in Phase 14 (V11). `food_log_entry.saved_recipe_id` is `ON DELETE SET NULL`. |
 | `health_summary` | `profile_id`, `generated_by`, `content jsonb` (points, gaps, conflicts, limitations, and a copy of each cited record), `period_from`, `period_to`, `source_refs jsonb` (type and ID of every record sent), `provider`, `model`, `prompt_version`. Added in Phase 16 (V12); never updated. |
-| `emergency_card` | `profile_id` UNIQUE, `enabled`, `token_hash` UNIQUE, `token_rotated_at` |
-| `emergency_card_item` | `card_id`, `item_type`, `display_text`, `display_order` |
+| `emergency_card` | `profile_id` UNIQUE, `enabled`, `token_hash` UNIQUE nullable, `token_rotated_at` nullable. A check keeps `enabled` true exactly when a hash is set: turning the card off clears the hash. Added in Phase 17 (V14). |
+| `emergency_card_item` | `card_id`, `item_type` (`PERSON`, `ALLERGY`, `CONDITION`, `MEDICATION`, `EMERGENCY_CONTACT`, `NOTE`), `display_text` (1 to 300 characters), `display_order`, `source_record_id` and `source_updated_at` (both or neither; never for `PERSON` or `NOTE`). `source_record_id` is not a foreign key: it can name a row in several tables, and the text outlives the record. |
 | `audit_event` | `occurred_at`, `actor_account_id` nullable, `action`, `target_type`, `target_id`, `profile_id` nullable, `outcome`, `metadata jsonb` |
 
 Notes:
 
-- **`emergency_card_item` stores approved text, not references.** The card can only show what the user explicitly approved. An edit to a record cannot silently change or expand a public card. The UI flags when a source record has changed.
+- **`emergency_card_item` stores approved text, not references.** The card can only show what the user explicitly approved. An edit to a record cannot silently change or expand a public card. The UI flags when a source record has changed or been deleted, by comparing the record's `updated_at` with `source_updated_at`. The public card never shows either column.
 - **Only a hash of the emergency token is stored.** A database leak does not reveal working links.
 - **`audit_event` is append-only and holds no health details.** Its actor and target references are deliberately not foreign keys, so the history outlives deleted records. `action` has no `CHECK` constraint, unlike other enumerations, because each later phase adds actions. The code's `AuditAction` lists them.
 - **`spring_session` and `spring_session_attributes` belong to Spring Session JDBC** and follow its schema rather than the conventions above. Flyway creates them. The principal stored in a session is the account ID only.

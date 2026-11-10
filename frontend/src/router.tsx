@@ -16,6 +16,7 @@ export const PROFILE_SECTIONS = [
   'documents',
   'timeline',
   'summaries',
+  'emergency-card',
   'access',
 ] as const
 
@@ -28,6 +29,7 @@ export type Route =
   | { name: 'forgotPassword' }
   | { name: 'resetPassword' }
   | { name: 'meals' }
+  | { name: 'emergencyCard' }
   | { name: 'profile'; profileId: string; section: ProfileSection }
   | { name: 'notFound' }
 
@@ -51,6 +53,9 @@ export function parseRoute(pathname: string): Route {
   }
   if (parts.length === 1 && parts[0] === 'reset-password') {
     return { name: 'resetPassword' }
+  }
+  if (parts.length === 1 && parts[0] === 'emergency-card') {
+    return { name: 'emergencyCard' }
   }
   if (parts.length === 1 && parts[0] === 'meals') {
     return { name: 'meals' }

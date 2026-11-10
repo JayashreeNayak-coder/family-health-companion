@@ -143,12 +143,30 @@ test('captures every page', async ({ page }, info) => {
     'Documents',
     'Timeline',
     'Summaries',
+    'Emergency card',
     'Access',
   ]
   for (const [index, tab] of tabs.entries()) {
     await page.getByRole('navigation', { name: 'Profile sections' }).getByRole('link', { name: tab }).click()
     await shot(page, `${String(index + 3).padStart(2, '0')}-profile-${tab.toLowerCase().replaceAll(' ', '-')}`, info.project.name)
   }
+
+  // The emergency card: choose lines, save, turn on, then open the public page from the link.
+  await page.getByRole('navigation', { name: 'Profile sections' }).getByRole('link', { name: 'Emergency card' }).click()
+  await page.getByLabel('Name on the card').fill('Ravi')
+  await page.getByLabel('Penicillin (synthetic): Rash').check()
+  await page.getByLabel('Cetirizine (synthetic), 5 mg').check()
+  await page.getByLabel('Meera Demo (Aunt): +91 555 0100').check()
+  await page.getByRole('button', { name: 'Save card' }).click()
+  await expect(page.getByRole('button', { name: 'Turn on' })).toBeEnabled()
+  await page.getByRole('button', { name: 'Turn on' }).click()
+  await page.getByRole('dialog').getByRole('button', { name: 'Turn on' }).click()
+  const cardLink = await page.getByRole('textbox', { name: 'Emergency card link' }).inputValue()
+  await shot(page, '17a-emergency-card-link', info.project.name)
+  await page.goto(cardLink.replace(/^https?:\/\/[^/]+/, ''))
+  await expect(page.getByText('Penicillin (synthetic): Rash')).toBeVisible()
+  await shot(page, '17b-emergency-card-public', info.project.name)
+  await page.goBack()
 
   // The lab chart's hover readout.
   await page.getByRole('navigation', { name: 'Profile sections' }).getByRole('link', { name: 'Lab results' }).click()

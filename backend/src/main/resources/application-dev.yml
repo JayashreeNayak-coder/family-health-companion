@@ -9,7 +9,7 @@ server:
 
 app:
   mail:
-    # Lets the reset flow be tried locally without a mail account. Never on outside development.
+    # Lets the reset flow be tried locally without a working mail account. Never on outside development.
     log-when-unconfigured: true
   documents:
     # Relative to the backend folder, and ignored by Git.

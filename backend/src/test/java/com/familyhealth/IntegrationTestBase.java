@@ -12,7 +12,12 @@ import org.springframework.context.annotation.Import;
 		"spring.datasource.password=${TEST_DB_PASSWORD:}",
 		"app.documents.storage-dir=${java.io.tmpdir}/family-health-test-documents",
 		"app.ai.worker.enabled=false",
-		"app.ai.gemini.api-key="
+		"app.ai.gemini.api-key=",
+		// The developer's own keys may be in the environment. Tests must never use them or reach Google.
+		"app.oauth.google.client-id=",
+		"app.oauth.google.client-secret=",
+		"spring.mail.username=",
+		"spring.mail.password="
 })
 // No request dumps: they would print test passwords, and hide real log output from the logging test.
 @AutoConfigureMockMvc(print = MockMvcPrint.NONE)

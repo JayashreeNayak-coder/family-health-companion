@@ -11,6 +11,7 @@ import { ACCESS_BADGE, ageText } from '../home/ProfileCard'
 import { initials } from '../shell/initials'
 import { useNavProfiles } from '../shell/NavProfiles'
 import { DocumentsPanel } from '../documents/DocumentsPanel'
+import { EmergencyCardPanel } from '../emergencyCard/EmergencyCardPanel'
 import { MedicationsPanel } from '../medication/MedicationsPanel'
 import { LabTrendsPanel } from '../records/LabTrendsPanel'
 import { RecordSection } from '../records/RecordSection'
@@ -73,10 +74,15 @@ export function ProfilePage({ profileId, section: tab }: Props) {
   }, [load])
 
   const tabs = BASE_TABS.concat(
-    profile?.accessLevel === 'MANAGE' ? [{ id: 'access', label: 'Access' }] : [],
+    profile?.accessLevel === 'MANAGE'
+      ? [
+          { id: 'emergency-card', label: 'Emergency card' },
+          { id: 'access', label: 'Access' },
+        ]
+      : [],
   )
 
-  // The Access tab exists only for managers. Anyone else at its address sees the overview.
+  // The Emergency card and Access tabs exist only for managers. Anyone else at its address sees the overview.
   const shown: ProfileSection = profile && !tabs.some((item) => item.id === tab) ? 'overview' : tab
 
   useDocumentTitle(profile?.fullName ?? 'Profile', tabs.find((item) => item.id === shown)?.label)
@@ -162,6 +168,7 @@ export function ProfilePage({ profileId, section: tab }: Props) {
           {shown === 'summaries' && (
             <SummariesPanel profileId={profile.id} name={profile.fullName} canEdit={profile.accessLevel !== 'VIEW'} />
           )}
+          {shown === 'emergency-card' && <EmergencyCardPanel profileId={profile.id} />}
           {shown === 'access' && <AccessPanel profile={profile} />}
         </>
       )}

@@ -2,6 +2,8 @@ package com.familyhealth.mail;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import jakarta.mail.AuthenticationFailedException;
+import jakarta.mail.MessagingException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -9,6 +11,7 @@ import org.springframework.mail.MailAuthenticationException;
 import org.springframework.mail.MailException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.stereotype.Component;
 
 /**
@@ -46,8 +49,32 @@ class SmtpEmailSender implements EmailSender {
 			log.warn("MAIL_USERNAME is not an email address, so the mail server will refuse to sign in");
 		}
 		else {
-			log.info("Email sending is on");
+			log.info("Email sending is on. Checking the mail server sign-in in the background");
+			checkSignIn();
 		}
+	}
+
+	/**
+	 * Signs in to the mail server once, without sending anything, so wrong credentials show up at
+	 * startup rather than as a reset email that silently never arrives. Never delays startup.
+	 */
+	private void checkSignIn() {
+		if (!(mail instanceof JavaMailSenderImpl impl)) {
+			return;
+		}
+		background.execute(() -> {
+			try {
+				impl.testConnection();
+				log.info("Mail server sign-in works");
+			}
+			catch (AuthenticationFailedException ex) {
+				log.warn("The mail server refused MAIL_USERNAME and MAIL_PASSWORD, so no email will be sent. "
+						+ "For Gmail, MAIL_PASSWORD must be a 16-letter app password, not the account password");
+			}
+			catch (MessagingException ex) {
+				log.warn("Could not reach the mail server: {}", ex.getClass().getSimpleName());
+			}
+		});
 	}
 
 	@Override
@@ -76,6 +103,10 @@ class SmtpEmailSender implements EmailSender {
 						ex instanceof MailAuthenticationException
 								? ". The mail server refused MAIL_USERNAME and MAIL_PASSWORD (for Gmail, use a 16-letter app password)"
 								: "");
+				if (logWhenUnconfigured) {
+					// Development only, as when no account is set: the flow can still be finished locally.
+					log.warn("Development copy of the unsent email \"{}\":\n{}", subject, text);
+				}
 			}
 		});
 	}

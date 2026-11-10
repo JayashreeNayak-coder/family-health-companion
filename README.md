@@ -2,7 +2,7 @@
 
 A web application that helps individuals and families organize health records. It is a record-management and support tool. It does not diagnose, prescribe, or replace healthcare professionals.
 
-**Status:** early prototype. Accounts, families, profiles with access control, health history, visits, symptoms, medications with in-app reminders, lab results with trends, a food log, private document upload with photos and files attached to records, and the timeline work. AI reading of uploaded documents works with a Gemini key, as a draft you review and approve item by item. Other AI features don't exist yet. See [PROJECT_STATUS.md](PROJECT_STATUS.md).
+**Status:** early prototype. Accounts, families, profiles with access control, health history, visits, symptoms, medications with in-app reminders, lab results with trends, a food log, private document upload with photos and files attached to records, and the timeline work. With a Gemini key, AI reads uploaded documents into a draft you review and approve item by item, suggests meals, and writes cited summaries of records. Sign-in works with a password or a Google account, with password reset by email. A profile's manager can share an emergency card through a link or QR code that shows only the lines they approve. See [PROJECT_STATUS.md](PROJECT_STATUS.md).
 
 **Use synthetic data only.** Do not enter real health information.
 
