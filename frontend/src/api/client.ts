@@ -65,10 +65,10 @@ async function write<T>(method: string, path: string, body?: unknown): Promise<T
 }
 
 /** A multipart upload. The browser sets the multipart Content-Type and boundary itself. */
-export async function apiUpload<T>(path: string, form: FormData): Promise<T> {
+export async function apiUpload<T>(path: string, form: FormData, method: 'POST' | 'PUT' = 'POST'): Promise<T> {
   const csrf = await apiGet<{ headerName: string; token: string }>('/auth/csrf')
   const response = await send(path, {
-    method: 'POST',
+    method,
     headers: { [csrf.headerName]: csrf.token },
     body: form,
   })
@@ -89,8 +89,9 @@ export function apiPut<T>(path: string, body: unknown): Promise<T> {
   return write<T>('PUT', path, body)
 }
 
-export function apiDelete(path: string): Promise<void> {
-  return write<void>('DELETE', path)
+/** Most deletes return nothing; removing a photo returns the updated profile or family. */
+export function apiDelete<T = void>(path: string): Promise<T> {
+  return write<T>('DELETE', path)
 }
 
 export type Page<T> = { items: T[]; page: number; size: number; totalItems: number }

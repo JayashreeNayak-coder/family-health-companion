@@ -89,8 +89,9 @@ Every profile-owned table has `profile_id uuid NOT NULL` referencing `health_pro
 | Column | Type | Notes |
 |---|---|---|
 | `id` | uuid | PK |
-| `name` | text | NOT NULL |
+| `name` | text | NOT NULL. Stored trimmed, with runs of spaces made single. Unique, ignoring case, among the families each account belongs to; that spans `family_membership`, so the service checks it on create, rename, and joining (D-031). |
 | `created_by` | uuid | FK `user_account` |
+| `photo_key`, `photo_updated_at` | text, timestamptz | Both or neither (V15). `photo_key` is UNIQUE, random, and names a 512 px JPEG in the private document storage. |
 
 ### `family_membership`
 | Column | Type | Notes |
@@ -108,6 +109,9 @@ Every profile-owned table has `profile_id uuid NOT NULL` referencing `health_pro
 | `full_name` | text | NOT NULL |
 | `date_of_birth` | date | NULL |
 | `is_dependent` | boolean | NOT NULL |
+| `photo_key`, `photo_updated_at` | text, timestamptz | Both or neither (V15), as on `family` |
+
+Deleting a family (V3's `ON DELETE CASCADE`) removes its memberships, invitations, and profiles, and through them every profile-owned row. The service deletes stored files (documents and photos) once that commits.
 
 Unique: (`family_id`, `linked_account_id`). Sex, blood group, and government or insurance identifiers are deliberately not collected, because no MVP feature requires them (see Q1).
 

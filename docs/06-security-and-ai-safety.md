@@ -91,6 +91,12 @@ The SRS requires "family-member-specific access permissions" but does not define
 - **Download:** streamed through the backend after an access check, sent as an attachment.
 - **Not included in the prototype:** virus scanning. Listed as a limitation.
 
+### Profile and family photos
+
+- JPEG or PNG only, by content signature; at most 5 MB and 40 megapixels, checked before the image is decoded.
+- Re-encoded on the server as a 512 px JPEG, which keeps only the pixels: EXIF data such as GPS location and camera details is dropped.
+- Stored like documents, under random keys, and served only through the backend: a profile photo to anyone with `VIEW`, a family photo to its members. Only `EDIT` (profile) or a family manager (family) may change one.
+
 ## 6. Emergency card
 
 - Off by default. The user selects each item to show.
@@ -136,7 +142,7 @@ Names, dates of birth, and contact details are removed from AI requests unless t
 - Summaries are checked after generation: each cited record must exist in the data sent, otherwise the response is rejected.
 - All AI content is visibly labelled in the UI and in PDF exports.
 - The UI distinguishes **User reported**, **From document**, and **AI generated**.
-- PDFs state that they are user-generated record summaries, not official medical certificates.
+- PDFs state that they are user-generated record summaries, not official medical certificates, at the top and in every page footer, and label the content AI-generated (Phase 18). They are made on the server with Apache PDFBox and the bundled Noto Sans font (OFL); characters the font lacks print as "?", and scripts that need shaping, such as Devanagari, aren't supported.
 - Where relevant, responses encourage talking to a qualified healthcare professional.
 
 ### 8.4 Treating documents as untrusted

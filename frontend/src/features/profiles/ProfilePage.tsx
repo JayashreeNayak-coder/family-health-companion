@@ -1,6 +1,7 @@
+import { Avatar } from '../../components/Avatar'
 import { useCallback, useEffect, useState } from 'react'
 import { errorMessage } from '../../api/client'
-import { getProfile, type Profile } from '../../api/profiles'
+import { getProfile, profilePhotoUrl, type Profile } from '../../api/profiles'
 import { ChevronRight, Pencil } from 'lucide-react'
 import { Badge } from '../../components/Badge'
 import { buttonClass } from '../../components/Button'
@@ -8,7 +9,6 @@ import { useDocumentTitle } from '../../components/useDocumentTitle'
 import { ErrorNote, Loading } from '../../components/Feedback'
 import { Link, navigate, profilePath, type ProfileSection } from '../../router'
 import { ACCESS_BADGE, ageText } from '../home/ProfileCard'
-import { initials } from '../shell/initials'
 import { useNavProfiles } from '../shell/NavProfiles'
 import { DocumentsPanel } from '../documents/DocumentsPanel'
 import { EmergencyCardPanel } from '../emergencyCard/EmergencyCardPanel'
@@ -182,12 +182,11 @@ function ProfileHeader({ profile, onDetails }: { profile: Profile; onDetails: bo
 
   return (
     <header className="flex flex-wrap items-center gap-4">
-      <span
-        aria-hidden="true"
-        className="grid size-14 shrink-0 place-items-center rounded-full bg-brand-100 text-lg font-semibold text-brand-800 sm:size-16 sm:text-xl"
-      >
-        {initials(profile.fullName)}
-      </span>
+      <Avatar
+        name={profile.fullName}
+        photoUrl={profilePhotoUrl(profile)}
+        className="size-14 bg-brand-100 text-lg font-semibold text-brand-800 sm:size-16 sm:text-xl"
+      />
       <div className="min-w-48 flex-1">
         <h1 className="text-2xl font-semibold break-words text-slate-900">{profile.fullName}</h1>
         <p className="mt-0.5 text-sm text-slate-600">

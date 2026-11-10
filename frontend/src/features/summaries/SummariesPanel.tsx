@@ -1,8 +1,9 @@
-import { FileText, ScrollText, Sparkles, Trash2 } from 'lucide-react'
+import { Download, FileText, ScrollText, Sparkles, Trash2 } from 'lucide-react'
 import { useEffect, useState, type FormEvent } from 'react'
 import { errorMessage } from '../../api/client'
 import {
   deleteSummary,
+  summaryPdf,
   generateSummary,
   listSummaries,
   type HealthSummary,
@@ -67,11 +68,45 @@ function SourceChip({ source }: { source: SummarySource }) {
   )
 }
 
+/** Fetches the PDF through the API (with the session and access check) and saves it. */
+function DownloadPdf({ profileId, summary }: { profileId: string; summary: HealthSummary }) {
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  async function download() {
+    setBusy(true)
+    setError(null)
+    try {
+      const url = URL.createObjectURL(await summaryPdf(profileId, summary.id))
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `health-record-summary-${summary.createdAt.slice(0, 10)}.pdf`
+      link.click()
+      setTimeout(() => URL.revokeObjectURL(url), 1000)
+    } catch (failure) {
+      setError(errorMessage(failure))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <>
+      <Button icon={Download} busy={busy} onClick={() => void download()} aria-label={`Download PDF: ${periodText(summary)}`}>
+        Download PDF
+      </Button>
+      {error && <ErrorNote message={error} />}
+    </>
+  )
+}
+
 function SummaryView({
+  profileId,
   summary,
   canEdit,
   onDelete,
 }: {
+  profileId: string
   summary: HealthSummary
   canEdit: boolean
   onDelete: () => void
@@ -85,11 +120,14 @@ function SummaryView({
         <p className="text-sm text-slate-600">
           Made {new Date(summary.createdAt).toLocaleString()} from the records at that time.
         </p>
-        {canEdit && (
-          <Button icon={Trash2} variant="ghost" onClick={onDelete} aria-label={`Delete summary: ${periodText(summary)}`}>
-            Delete
-          </Button>
-        )}
+        <div className="flex flex-wrap items-center gap-2">
+          <DownloadPdf profileId={profileId} summary={summary} />
+          {canEdit && (
+            <Button icon={Trash2} variant="ghost" onClick={onDelete} aria-label={`Delete summary: ${periodText(summary)}`}>
+              Delete
+            </Button>
+          )}
+        </div>
       </div>
       <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
         <p className="font-medium">{summary.disclaimer}</p>
@@ -290,7 +328,7 @@ export function SummariesPanel({ profileId, name, canEdit }: { profileId: string
               <AiBadge />
             </summary>
             <div className="mt-4">
-              <SummaryView summary={summary} canEdit={canEdit} onDelete={() => handleDelete(summary)} />
+              <SummaryView profileId={profileId} summary={summary} canEdit={canEdit} onDelete={() => handleDelete(summary)} />
             </div>
           </details>
         ))}

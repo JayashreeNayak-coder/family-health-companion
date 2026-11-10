@@ -4,6 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PastOrPresent;
 import jakarta.validation.constraints.Size;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
 
@@ -33,12 +34,14 @@ final class ProfileDtos {
 			@NotNull Long version) {
 	}
 
+	/** {@code photoUpdatedAt} is null without a photo; it changes whenever the photo does. */
 	record ProfileResponse(UUID id, UUID familyId, String fullName, LocalDate dateOfBirth, boolean dependent,
-			boolean linkedToAccount, AccessLevel accessLevel, Long version) {
+			boolean linkedToAccount, AccessLevel accessLevel, Instant photoUpdatedAt, Long version) {
 
 		static ProfileResponse from(HealthProfile profile, AccessLevel level) {
 			return new ProfileResponse(profile.id(), profile.familyId(), profile.fullName(), profile.dateOfBirth(),
-					profile.dependent(), profile.linkedAccountId() != null, level, profile.version());
+					profile.dependent(), profile.linkedAccountId() != null, level, profile.photoUpdatedAt(),
+					profile.version());
 		}
 
 	}

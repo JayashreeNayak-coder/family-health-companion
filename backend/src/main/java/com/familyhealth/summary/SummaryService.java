@@ -4,10 +4,13 @@ import com.familyhealth.ai.AiErrors;
 import com.familyhealth.ai.AiException;
 import com.familyhealth.ai.AiUsageService;
 import com.familyhealth.ai.SummaryGenerator;
+import com.familyhealth.audit.AuditAction;
+import com.familyhealth.audit.AuditService;
 import com.familyhealth.common.ApiException;
 import com.familyhealth.common.PageResponse;
 import com.familyhealth.profile.AccessLevel;
 import com.familyhealth.profile.ProfileAccess;
+import com.familyhealth.profile.ProfileDirectory;
 import com.familyhealth.records.SummarySources;
 import com.familyhealth.summary.SummaryDtos.Conflict;
 import com.familyhealth.summary.SummaryDtos.Point;
@@ -67,8 +70,15 @@ public class SummaryService {
 
 	private final JsonMapper json;
 
+	private final ProfileDirectory directory;
+
+	private final AuditService audit;
+
 	SummaryService(SummarySources sources, SummaryGenerator generator, AiUsageService usage,
-			HealthSummaryRepository summaries, ProfileAccess access, JsonMapper json) {
+			HealthSummaryRepository summaries, ProfileAccess access, JsonMapper json, ProfileDirectory directory,
+			AuditService audit) {
+		this.directory = directory;
+		this.audit = audit;
 		this.sources = sources;
 		this.generator = generator;
 		this.usage = usage;
@@ -127,6 +137,17 @@ public class SummaryService {
 	public Response get(UUID accountId, UUID profileId, UUID id) {
 		access.require(accountId, profileId, AccessLevel.VIEW);
 		return toResponse(load(profileId, id));
+	}
+
+	/** VIEW, like reading the summary. Every export is audited, without its content (docs/06 section 7). */
+	@Transactional
+	public byte[] exportPdf(UUID accountId, UUID profileId, UUID id) {
+		access.require(accountId, profileId, AccessLevel.VIEW);
+		Response summary = toResponse(load(profileId, id));
+		byte[] pdf = SummaryPdf.render(summary, directory.fullName(profileId));
+		audit.recordForProfile(AuditAction.PDF_EXPORTED, accountId, profileId,
+				Map.of("kind", "SUMMARY", "summaryId", id.toString()));
+		return pdf;
 	}
 
 	@Transactional

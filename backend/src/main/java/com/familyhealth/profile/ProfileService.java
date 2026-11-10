@@ -5,14 +5,17 @@ import com.familyhealth.audit.AuditService;
 import com.familyhealth.common.ApiException;
 import com.familyhealth.common.PageResponse;
 import com.familyhealth.family.FamilyMembers;
+import com.familyhealth.family.FamilyProfiles;
 import com.familyhealth.family.InvitedProfileLinks;
-import com.familyhealth.identity.AccountDirectory;
 import com.familyhealth.identity.AccountDirectory.AccountSummary;
+import com.familyhealth.identity.AccountDirectory;
+import com.familyhealth.photo.PhotoStore;
 import com.familyhealth.profile.ProfileDtos.CreateProfileRequest;
 import com.familyhealth.profile.ProfileDtos.GrantResponse;
 import com.familyhealth.profile.ProfileDtos.ProfileKind;
 import com.familyhealth.profile.ProfileDtos.ProfileResponse;
 import com.familyhealth.profile.ProfileDtos.UpdateProfileRequest;
+import java.time.Clock;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -21,9 +24,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
-class ProfileService implements InvitedProfileLinks {
+class ProfileService implements InvitedProfileLinks, FamilyProfiles {
 
 	private final HealthProfileRepository profiles;
 
@@ -39,9 +43,16 @@ class ProfileService implements InvitedProfileLinks {
 
 	private final ProfileFiles files;
 
+	private final PhotoStore photos;
+
+	private final Clock clock;
+
 	ProfileService(HealthProfileRepository profiles, ProfileAccessGrantRepository grants, ProfileAccess access,
-			FamilyMembers members, AccountDirectory accounts, AuditService audit, ProfileFiles files) {
+			FamilyMembers members, AccountDirectory accounts, AuditService audit, ProfileFiles files,
+			PhotoStore photos, Clock clock) {
 		this.files = files;
+		this.photos = photos;
+		this.clock = clock;
 		this.profiles = profiles;
 		this.grants = grants;
 		this.access = access;
@@ -97,10 +108,50 @@ class ProfileService implements InvitedProfileLinks {
 	@Transactional
 	public void delete(UUID accountId, UUID profileId) {
 		access.require(accountId, profileId, AccessLevel.MANAGE);
-		HealthProfile profile = load(profileId);
-		files.deleteAllAfterCommit(profileId);
+		deleteWithFiles(accountId, load(profileId));
+	}
+
+	/** For deleting a family (FamilyProfiles). The family module has already checked the caller is its manager. */
+	@Override
+	@Transactional
+	public void deleteAllInFamily(UUID accountId, UUID familyId) {
+		profiles.findByFamilyId(familyId).forEach(profile -> deleteWithFiles(accountId, profile));
+		profiles.flush();
+	}
+
+	private void deleteWithFiles(UUID accountId, HealthProfile profile) {
+		files.deleteAllAfterCommit(profile.id());
+		photos.deleteAfterCommit(profile.photoKey());
 		profiles.delete(profile);
-		audit.recordForProfile(AuditAction.PROFILE_DELETED, accountId, profileId, Map.of());
+		audit.recordForProfile(AuditAction.PROFILE_DELETED, accountId, profile.id(), Map.of());
+	}
+
+	/** EDIT, like the profile's other details. Replaces any earlier photo. */
+	@Transactional
+	public ProfileResponse setPhoto(UUID accountId, UUID profileId, MultipartFile file) {
+		AccessLevel level = access.require(accountId, profileId, AccessLevel.EDIT);
+		HealthProfile profile = load(profileId);
+		photos.deleteAfterCommit(profile.usePhoto(photos.save(file), clock.instant()));
+		return ProfileResponse.from(profiles.saveAndFlush(profile), level);
+	}
+
+	@Transactional
+	public ProfileResponse deletePhoto(UUID accountId, UUID profileId) {
+		AccessLevel level = access.require(accountId, profileId, AccessLevel.EDIT);
+		HealthProfile profile = load(profileId);
+		photos.deleteAfterCommit(profile.usePhoto(null, clock.instant()));
+		return ProfileResponse.from(profiles.saveAndFlush(profile), level);
+	}
+
+	/** Anyone who can view the profile. */
+	@Transactional(readOnly = true)
+	public byte[] photo(UUID accountId, UUID profileId) {
+		access.require(accountId, profileId, AccessLevel.VIEW);
+		HealthProfile profile = load(profileId);
+		if (profile.photoKey() == null) {
+			throw new ApiException(HttpStatus.NOT_FOUND, "PHOTO_NOT_FOUND", "This profile has no photo");
+		}
+		return photos.read(profile.photoKey());
 	}
 
 	@Transactional(readOnly = true)

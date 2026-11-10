@@ -1,4 +1,4 @@
-import { apiDelete, apiGet, apiPost, type Page } from './client'
+import { apiBlob, apiDelete, apiGet, apiPost, type Page } from './client'
 import type { SourceType } from './records'
 
 export type SummaryTopic = 'CONDITIONS' | 'ALLERGIES' | 'MEDICATIONS' | 'LAB_RESULTS' | 'VISITS' | 'SYMPTOMS'
@@ -43,4 +43,9 @@ export function generateSummary(
 
 export function deleteSummary(profileId: string, summaryId: string): Promise<void> {
   return apiDelete(`/profiles/${profileId}/summaries/${summaryId}`)
+}
+
+/** The summary as a labelled PDF (Phase 18). Every export is recorded in the audit log. */
+export function summaryPdf(profileId: string, summaryId: string): Promise<Blob> {
+  return apiBlob(`/profiles/${profileId}/summaries/${summaryId}/pdf`)
 }

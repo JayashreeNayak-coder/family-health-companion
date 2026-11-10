@@ -1,6 +1,7 @@
 package com.familyhealth.profile;
 
 import jakarta.persistence.LockModeType;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
@@ -13,6 +14,8 @@ import org.springframework.data.repository.query.Param;
 interface HealthProfileRepository extends JpaRepository<HealthProfile, UUID> {
 
 	boolean existsByFamilyIdAndLinkedAccountId(UUID familyId, UUID linkedAccountId);
+
+	List<HealthProfile> findByFamilyId(UUID familyId);
 
 	/** Serializes changes to a profile's grants, so "at least one MANAGE" can't be broken by a race. */
 	@Lock(LockModeType.PESSIMISTIC_WRITE)

@@ -1,8 +1,8 @@
+import { Avatar } from '../../components/Avatar'
 import { ChevronRight } from 'lucide-react'
-import type { AccessLevel, Profile } from '../../api/profiles'
+import { profilePhotoUrl, type AccessLevel, type Profile } from '../../api/profiles'
 import { Badge, type BadgeTone } from '../../components/Badge'
 import { Link, profilePath } from '../../router'
-import { initials } from '../shell/initials'
 
 /** Age in whole years, or months under one year, from a YYYY-MM-DD date. Null if unknown. */
 export function ageText(dateOfBirth: string | null, today: Date = new Date()): string | null {
@@ -43,12 +43,11 @@ export function ProfileCard({ profile }: { profile: Profile }) {
 
   return (
     <div className="group relative flex items-center gap-4 rounded-xl border border-slate-200 bg-white p-4 transition has-[a:focus-visible]:outline-2 has-[a:focus-visible]:outline-offset-2 has-[a:focus-visible]:outline-brand-600 hover:border-brand-200 hover:shadow-sm">
-      <span
-        aria-hidden="true"
-        className="grid size-12 shrink-0 place-items-center rounded-full bg-brand-100 text-base font-semibold text-brand-800"
-      >
-        {initials(profile.fullName)}
-      </span>
+      <Avatar
+        name={profile.fullName}
+        photoUrl={profilePhotoUrl(profile)}
+        className="size-12 bg-brand-100 text-base font-semibold text-brand-800"
+      />
       <span className="min-w-0 flex-1">
         <Link
           to={profilePath(profile.id)}

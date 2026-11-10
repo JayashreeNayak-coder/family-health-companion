@@ -1,4 +1,4 @@
-import { apiDelete, apiGet, apiPost, apiPut, type Page } from './client'
+import { apiDelete, apiGet, apiPost, apiPut, apiUpload, type Page } from './client'
 
 export type AccessLevel = 'VIEW' | 'EDIT' | 'MANAGE'
 
@@ -12,6 +12,8 @@ export type Profile = {
   dependent: boolean
   linkedToAccount: boolean
   accessLevel: AccessLevel
+  /** Null without a photo. Changes whenever the photo does. */
+  photoUpdatedAt: string | null
   version: number
 }
 
@@ -47,6 +49,24 @@ export function updateProfile(
 
 export function deleteProfile(id: string): Promise<void> {
   return apiDelete(`/profiles/${id}`)
+}
+
+/** Needs EDIT access, like the profile's other details. */
+export function setProfilePhoto(id: string, file: File): Promise<Profile> {
+  const form = new FormData()
+  form.append('file', file)
+  return apiUpload(`/profiles/${id}/photo`, form, 'PUT')
+}
+
+export function removeProfilePhoto(id: string): Promise<Profile> {
+  return apiDelete<Profile>(`/profiles/${id}/photo`)
+}
+
+/** The photo's address, changing with the photo so the browser never shows an old one. */
+export function profilePhotoUrl(profile: Pick<Profile, 'id' | 'photoUpdatedAt'>): string | null {
+  return profile.photoUpdatedAt
+    ? `/api/v1/profiles/${profile.id}/photo?v=${encodeURIComponent(profile.photoUpdatedAt)}`
+    : null
 }
 
 export function listGrants(profileId: string): Promise<Grant[]> {

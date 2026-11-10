@@ -4,6 +4,7 @@ import com.familyhealth.common.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
 
@@ -26,6 +27,12 @@ class HealthProfile extends BaseEntity {
 
 	@Column(name = "is_dependent", nullable = false)
 	private boolean dependent;
+
+	@Column(name = "photo_key")
+	private String photoKey;
+
+	@Column(name = "photo_updated_at")
+	private Instant photoUpdatedAt;
 
 	protected HealthProfile() {
 	}
@@ -66,6 +73,22 @@ class HealthProfile extends BaseEntity {
 
 	boolean dependent() {
 		return dependent;
+	}
+
+	String photoKey() {
+		return photoKey;
+	}
+
+	Instant photoUpdatedAt() {
+		return photoUpdatedAt;
+	}
+
+	/** Returns the replaced key, if any, so its file can be deleted. */
+	String usePhoto(String key, Instant now) {
+		String old = photoKey;
+		photoKey = key;
+		photoUpdatedAt = key == null ? null : now;
+		return old;
 	}
 
 }

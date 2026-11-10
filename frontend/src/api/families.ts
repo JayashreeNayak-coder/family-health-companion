@@ -1,8 +1,15 @@
-import { apiGet, apiPost, type Page } from './client'
+import { apiDelete, apiGet, apiPost, apiPut, apiUpload, type Page } from './client'
 
 export type FamilyRole = 'MANAGER' | 'MEMBER'
 
-export type FamilySummary = { id: string; name: string; role: FamilyRole }
+export type FamilySummary = {
+  id: string
+  name: string
+  role: FamilyRole
+  /** Null without a photo. Changes whenever the photo does. */
+  photoUpdatedAt: string | null
+  version: number
+}
 
 export type FamilyMember = {
   accountId: string
@@ -33,6 +40,33 @@ export function getFamily(id: string): Promise<Family> {
 
 export function createFamily(name: string): Promise<FamilySummary> {
   return apiPost('/families', { name })
+}
+
+/** Managers only. Names are unique among the families each member belongs to. */
+export function renameFamily(id: string, name: string, version: number): Promise<FamilySummary> {
+  return apiPut(`/families/${id}`, { name, version })
+}
+
+/** Managers only, and only when no other account is in the family. Deletes every profile in it. */
+export function deleteFamily(id: string): Promise<void> {
+  return apiDelete(`/families/${id}`)
+}
+
+export function setFamilyPhoto(id: string, file: File): Promise<FamilySummary> {
+  const form = new FormData()
+  form.append('file', file)
+  return apiUpload(`/families/${id}/photo`, form, 'PUT')
+}
+
+export function removeFamilyPhoto(id: string): Promise<FamilySummary> {
+  return apiDelete<FamilySummary>(`/families/${id}/photo`)
+}
+
+/** The photo's address, changing with the photo so the browser never shows an old one. */
+export function familyPhotoUrl(family: Pick<FamilySummary, 'id' | 'photoUpdatedAt'>): string | null {
+  return family.photoUpdatedAt
+    ? `/api/v1/families/${family.id}/photo?v=${encodeURIComponent(family.photoUpdatedAt)}`
+    : null
 }
 
 export function createInvitation(

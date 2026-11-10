@@ -7,7 +7,12 @@ import com.familyhealth.summary.SummaryDtos.Response;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.CacheControl;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -49,6 +54,18 @@ class SummaryController {
 	Response get(@AuthenticationPrincipal AccountPrincipal principal, @PathVariable UUID profileId,
 			@PathVariable UUID id) {
 		return service.get(principal.accountId(), profileId, id);
+	}
+
+	@GetMapping("/{id}/pdf")
+	ResponseEntity<byte[]> pdf(@AuthenticationPrincipal AccountPrincipal principal, @PathVariable UUID profileId,
+			@PathVariable UUID id) {
+		byte[] pdf = service.exportPdf(principal.accountId(), profileId, id);
+		return ResponseEntity.ok()
+			.contentType(MediaType.APPLICATION_PDF)
+			.cacheControl(CacheControl.noStore())
+			.header(HttpHeaders.CONTENT_DISPOSITION,
+					ContentDisposition.attachment().filename("health-record-summary.pdf").build().toString())
+			.body(pdf);
 	}
 
 	@DeleteMapping("/{id}")

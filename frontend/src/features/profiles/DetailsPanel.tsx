@@ -1,8 +1,16 @@
 import { useState, type FormEvent } from 'react'
 import { errorMessage } from '../../api/client'
-import { deleteProfile, updateProfile, type Profile } from '../../api/profiles'
+import {
+  deleteProfile,
+  profilePhotoUrl,
+  removeProfilePhoto,
+  setProfilePhoto,
+  updateProfile,
+  type Profile,
+} from '../../api/profiles'
 import { buttonClass } from '../../components/Button'
 import { Card } from '../../components/Card'
+import { PhotoPicker } from '../../components/PhotoPicker'
 import { ErrorNote, Missing } from '../../components/Feedback'
 import { inputClass } from '../../components/formStyles'
 import { useConfirm } from '../../components/Dialog'
@@ -70,7 +78,16 @@ export function DetailsPanel({ profile, onSaved, onDeleted }: Props) {
   }
 
   return (
-    <Card>
+    <div className="space-y-6">
+    <Card title="Photo" description="Shown beside this person's name to everyone who can see the profile.">
+      <PhotoPicker
+        name={profile.fullName}
+        photoUrl={profilePhotoUrl(profile)}
+        onUpload={async (file) => onSaved(await setProfilePhoto(profile.id, file))}
+        onRemove={async () => onSaved(await removeProfilePhoto(profile.id))}
+      />
+    </Card>
+    <Card title="Details">
       {confirmDialog}
       <form onSubmit={handleSave} className="space-y-3">
         <label className="block text-sm font-medium">
@@ -105,5 +122,6 @@ export function DetailsPanel({ profile, onSaved, onDeleted }: Props) {
         </div>
       </form>
     </Card>
+    </div>
   )
 }

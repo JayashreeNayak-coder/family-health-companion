@@ -10,6 +10,9 @@ import { expect, test, type APIRequestContext, type Page } from '@playwright/tes
 // Node's Buffer, reached without adding @types/node for this one use.
 const NodeBuffer = (globalThis as unknown as { Buffer: { from(text: string): Uint8Array } }).Buffer
 
+/** A tiny synthetic avatar (96 px PNG), for the photo uploads. */
+const AVATAR = NodeBuffer.from('iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAIAAABt+uBvAAABL0lEQVR42u3asXHDMBBE0a3EJTp2OS7HRbgEBU6UqwOZMwSOOPDN/ApeBtzm9/GnNwUBIECAAAECBAiQAAECBAgQIECABAgQIECAAB3q+fP9vpsC/euyiFS66FxllC40VzGlnU6xUTrqVBqlqU6ZEaAFgCbp1BiltU6BESBAKwMV6Mw2AgQIECBAgAABAgQIkLcYIED3A/Kj6E8akLuYy6rbvHXHXdYd9kEWZjaKAtQH6OPr80i3AzrosoJUutBcxZReNPVMaapTZpS+OjVGaa1TYJTuOrONsoHOVKPsoTPPKNvoTDLKTjozjLKZznAjQIVAi+iMNQJUBbSUzkCj7KozyggQoMuBltUZYgRoMtDiOueNAAG6EKiFzkkjQIAALQrUSOeMESBAgAABWhjoBeIOy2mm5fDwAAAAAElFTkSuQmCC', 'base64')
+
 const PDF = NodeBuffer.from(
   '%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj 2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj ' +
     '3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 200 200]>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF\n',
@@ -118,6 +121,15 @@ test('captures every page', async ({ page }, info) => {
   await page.goto('/')
   await shot(page, '02-home', info.project.name)
 
+  // Managing a family: name, photo, and the delete rule.
+  await page.getByRole('button', { name: 'Manage family' }).click()
+  const manage = page.getByRole('dialog', { name: 'Manage Demo Family' })
+  await manage.getByLabel('Add a photo').setInputFiles({ name: 'family.png', mimeType: 'image/png', buffer: AVATAR })
+  await expect(manage.getByRole('button', { name: 'Remove photo' })).toBeVisible()
+  await page.screenshot({ path: `e2e/screenshots/${info.project.name}/02c-manage-family.png` })
+  await accessible(page, 'manage family dialog')
+  await page.keyboard.press('Escape')
+
   await page.getByRole('button', { name: 'Invite someone' }).click()
   await expect(page.getByRole('dialog')).toBeVisible()
   await page.screenshot({ path: `e2e/screenshots/${info.project.name}/02a-invite-dialog.png` })
@@ -150,6 +162,16 @@ test('captures every page', async ({ page }, info) => {
     await page.getByRole('navigation', { name: 'Profile sections' }).getByRole('link', { name: tab }).click()
     await shot(page, `${String(index + 3).padStart(2, '0')}-profile-${tab.toLowerCase().replaceAll(' ', '-')}`, info.project.name)
   }
+
+  // A profile photo, then Home showing both photos.
+  await page.getByRole('navigation', { name: 'Profile sections' }).getByRole('link', { name: 'Details' }).click()
+  await page.getByLabel('Add a photo').setInputFiles({ name: 'ravi.png', mimeType: 'image/png', buffer: AVATAR })
+  await expect(page.getByRole('button', { name: 'Remove photo' })).toBeVisible()
+  await shot(page, '15a-profile-photo', info.project.name)
+  await page.goto('/')
+  await expect(page.locator('main img').first()).toBeVisible()
+  await shot(page, '15b-home-with-photos', info.project.name)
+  await page.getByRole('main').getByRole('link', { name: 'Ravi Demo' }).click()
 
   // The emergency card: choose lines, save, turn on, then open the public page from the link.
   await page.getByRole('navigation', { name: 'Profile sections' }).getByRole('link', { name: 'Emergency card' }).click()

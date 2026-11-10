@@ -2,8 +2,8 @@
 ## Project Status
 
 **Last updated:** 2026-11-10
-**Current phase:** Phases 5 to 12 and 14 to 17 complete and committed. Password reset, Google sign-in, and show-password added at the owner's request and committed. Phase 18 (PDF export) waits on the owner's choice of PDF library. UI redesign UI-1 to UI-7 complete and committed. Phase 3 (deployment) is waiting on the owner.
-**Application code:** Accounts (password or Google sign-in, with password reset by email), families, profiles and access grants, conditions, allergies, dietary items, emergency contacts, visits, symptoms, medications with schedules and adherence, lab results with trends, food log, document upload with attachments on records, AI reading of documents as a reviewed draft (Gemini), the timeline, and the meal assistant (general and for a family member) with saved recipes and adding a recipe to a food log, cited record summaries, and an emergency card shared by link or QR code.
+**Current phase:** Phases 5 to 12 and 14 to 18 complete. Family management (rename, unique names, delete) and profile and family photos added at the owner's request (D-031). Phase 19 (synthetic demo data, security review, presentation prep) is next. UI redesign UI-1 to UI-7 complete and committed. Phase 3 (deployment) is waiting on the owner.
+**Application code:** Accounts (password or Google sign-in, with password reset by email), families, profiles and access grants, conditions, allergies, dietary items, emergency contacts, visits, symptoms, medications with schedules and adherence, lab results with trends, food log, document upload with attachments on records, AI reading of documents as a reviewed draft (Gemini), the timeline, and the meal assistant (general and for a family member) with saved recipes and adding a recipe to a food log, cited record summaries with PDF export, an emergency card shared by link or QR code, renaming and deleting families, and photos for profiles and families.
 
 ## Environment
 
@@ -55,20 +55,21 @@
 | 16 | Record-based summaries | Done |
 | Auth+ | Password reset by email, Google sign-in, show-password button (D-028) | Done |
 | 17 | Emergency card | Done |
-| 18 | PDF export | Not started |
+| 18 | PDF export | Done |
+| Fam+ | Rename and delete a family, unique names per account, profile and family photos (D-031) | Done |
 | 19 | Synthetic demo data, security review, and presentation prep | Not started |
 
 ## Tests
 
 | Suite | Result | Where |
 |---|---|---|
-| Backend unit tests (49) and integration tests (235) | Pass | Local (temporary PostgreSQL 18). CI: see the Git note below. |
-| Frontend tests (122), lint, type check, build | Pass | Local. CI: see the Git note below. |
+| Backend unit tests (58) and integration tests (252) | Pass | Local (temporary PostgreSQL 18). CI: see the Git note below. |
+| Frontend tests (132), lint, type check, build | Pass | Local. CI: see the Git note below. |
 | Full flow from registration to linking and deleting a profile, through the Vite dev proxy against the real backend | Pass, with `curl` (Phase 8) | Local |
 | Lab trend, food log, upload, download, rejected HTML, 12 MB upload, attachment, and document deletion against the real backend | Pass, with `curl` | Local |
 | Gemini client against a local stand-in server: request shape, key header, timeouts, and error codes | Pass | Local (unit) |
 | A real Gemini extraction of a synthetic prescription PDF, approval of one item, and an injected instruction that was ignored | Pass (`gemini-3.5-flash`) | Local, owner's key |
-| Screenshots of every page at 320, 390, 768, and 1280 px, with no sideways scrolling and no axe WCAG 2.2 A/AA violations (`npm run screenshots`) | Pass (after D-028), including the forgot and reset password pages, a summary and Meal ideas in both modes with a stubbed AI answer and a real save to the food log, the phone menu, the invite and record edit dialogs, the lab chart's hover readout, and a page refresh that keeps the open tab, and the emergency card (choose lines, save, turn on, then the public page from the link) | Local, against the owner's running dev backend |
+| Screenshots of every page at 320, 390, 768, and 1280 px, with no sideways scrolling and no axe WCAG 2.2 A/AA violations (`npm run screenshots`) | Pass (after D-028), including the forgot and reset password pages, a summary and Meal ideas in both modes with a stubbed AI answer and a real save to the food log, the phone menu, the invite and record edit dialogs, the lab chart's hover readout, and a page refresh that keeps the open tab, the emergency card (choose lines, save, turn on, then the public page from the link), the Manage family dialog with a family photo upload, and a profile photo shown on the profile and Home | Local, against the owner's running dev backend |
 | Docker image builds, and the auth flow through nginx | Last passed at Phase 4. Only CI can check this. | CI only |
 
 **Git note:** Phases 9 to 12 are local commits. The owner pushes; no CI run has been seen yet, and the owner is checking that Actions is enabled.
@@ -84,7 +85,7 @@
 - `/auth/register` has no rate limit. Close this before going online in Phase 3 (`docs/06` section 2).
 - Someone who knows an email can block that account's login for 15 minutes by failing repeatedly (`docs/06` section 2).
 - Google sign-in with the owner's keys was checked on 2026-11-10 up to Google's own sign-in page, which accepted the client ID and return address. The owner hasn't yet finished a full sign-in. The owner's first try showed no button because the backend ran in a terminal opened before `setx`. The backend now logs at startup whether Google sign-in and email are on (README troubleshooting).
-- Reset emails have not been sent through a real Gmail account yet. On 2026-11-10 `MAIL_USERNAME` was corrected, but Gmail refused `MAIL_PASSWORD` (535, bad credentials): it is the account password, not a 16-letter app password. The backend now says so at startup, and in development writes the unsent reset link to its log.
+- Gmail accepted the owner's app password on 2026-11-10 (checked by signing in without sending). The owner has not yet confirmed a reset email arriving in an inbox.
 - Password reset requests are limited per account (3 an hour), not per address.
 - A profile's section tabs scroll sideways and a label is cut off at the edge: on phones, and since the Emergency card tab (Phase 17) also at 1280 px for managers.
 - If login fails straight after a successful registration, the user stays on the form, and resubmitting reports the email as taken. They can switch to sign in.
@@ -100,7 +101,8 @@
 - A document's category, date, and description can't be edited after upload.
 - An upload attached from a record, where the attach step then fails, stays in Documents unattached.
 - Lab trends are shown for one test and unit at a time. Units are never converted.
-- Docker image changes for document storage are verified only by CI.
+- Docker image changes for document storage are verified only by CI. On 2026-11-10 the backend `Dockerfile` was found to have literal `
+` text instead of line continuations in its `RUN` line since Phase 11, which would most likely have failed the image build; fixed, but not yet built. Image processing and PDFBox need `java.desktop`, which the Temurin JRE image includes; also unverified until CI runs.
 - On Gemini's free tier, Google may use uploaded documents to improve its products and people may read them. Synthetic documents only (`DECISIONS.md`, D-021).
 - AI reading was tried once on a real model with one synthetic PDF. `gemini-flash-latest` was returning 503 (high demand), so the default is `gemini-3.5-flash` with `gemini-flash-lite-latest` as a fallback. Free-tier availability varies.
 - The AI never fills a condition's status, a medication's status, or a visit's time. The user adds them after approval.
@@ -112,6 +114,10 @@
 - The emergency card's QR code is shown only when a link is made, because only then is the token known. To print it again, make a new link.
 - Public emergency card reads are rate limited in memory (30 a minute per IP address): lost on restart, not shared between instances.
 - The screenshot runs and the reset check on 2026-11-10 left synthetic accounts in the local dev database (`screens-...@example.test`, `reset-check-...@example.com`).
+- PDFs use Noto Sans through PDFBox, which does no text shaping: Devanagari and other scripts that need it can't be shown, and missing characters print as "?". A shaping-capable renderer or per-script fonts would be needed for Indian-language names.
+- The family name check is in the service, so two simultaneous requests from one account could both create a family with the same name.
+- Deleting a family needs its manager to be the only member, and members can't be removed yet, so a family with other members can't be deleted at all for now.
+- Photos are cached by the viewer's browser for up to an hour; someone whose access is removed may still see a cached photo for that long.
 - Ingredients to avoid are checked by plain text matching. It misses other names and foods made from them, so it only flags (`docs/06` section 8.5).
 
 ## Next step
@@ -123,7 +129,8 @@
 5. **Phases 14 to 16** are committed (`41bf1e0`).
 6. **Password reset, Google sign-in, show-password** (D-028) are committed. **Owner:** create a Gmail app password, `setx MAIL_PASSWORD` with it, fully restart VS Code, restart the backend, and check its log says `Mail server sign-in works` (README troubleshooting).
 7. **Phase 17 (emergency card)** is done (D-029). **Owner:** restart the backend (migration V14) and try it from a profile you manage.
-8. **Phase 18 (PDF export)** needs a PDF library: the owner chooses (see the options given on 2026-11-10).
+8. **Phase 18 (PDF export)** is done with PDFBox (D-032), along with family management and photos (D-031). **Owner:** restart the backend (migration V15) and try them; send a password reset to confirm the email arrives.
+9. **Phase 19** (synthetic demo data, security review, presentation prep) is next. Phase 3 (deployment) still waits on hosting decisions.
 
 Decisions the owner must make later:
 

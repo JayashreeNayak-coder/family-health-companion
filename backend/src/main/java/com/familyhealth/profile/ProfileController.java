@@ -2,6 +2,7 @@ package com.familyhealth.profile;
 
 import com.familyhealth.common.PageResponse;
 import com.familyhealth.identity.AccountPrincipal;
+import com.familyhealth.photo.PhotoStore;
 import com.familyhealth.profile.ProfileDtos.CreateProfileRequest;
 import com.familyhealth.profile.ProfileDtos.GrantRequest;
 import com.familyhealth.profile.ProfileDtos.GrantResponse;
@@ -12,6 +13,8 @@ import java.util.List;
 import java.util.UUID;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,6 +26,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/v1")
@@ -56,6 +60,22 @@ class ProfileController {
 	ProfileResponse update(@AuthenticationPrincipal AccountPrincipal principal, @PathVariable UUID profileId,
 			@Valid @RequestBody UpdateProfileRequest request) {
 		return service.update(principal.accountId(), profileId, request);
+	}
+
+	@PutMapping(path = "/profiles/{profileId}/photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	ProfileResponse setPhoto(@AuthenticationPrincipal AccountPrincipal principal, @PathVariable UUID profileId,
+			@RequestParam(name = "file", required = false) MultipartFile file) {
+		return service.setPhoto(principal.accountId(), profileId, file);
+	}
+
+	@DeleteMapping("/profiles/{profileId}/photo")
+	ProfileResponse deletePhoto(@AuthenticationPrincipal AccountPrincipal principal, @PathVariable UUID profileId) {
+		return service.deletePhoto(principal.accountId(), profileId);
+	}
+
+	@GetMapping("/profiles/{profileId}/photo")
+	ResponseEntity<byte[]> photo(@AuthenticationPrincipal AccountPrincipal principal, @PathVariable UUID profileId) {
+		return PhotoStore.response(service.photo(principal.accountId(), profileId));
 	}
 
 	@DeleteMapping("/profiles/{profileId}")

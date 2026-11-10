@@ -6,7 +6,9 @@ COPY src src
 RUN sh ./mvnw -B -ntp -DskipTests package
 
 FROM eclipse-temurin:25-jre-alpine
-RUN addgroup -S app && adduser -S app -G app \n    && mkdir -p /var/lib/family-health/documents \n    && chown app:app /var/lib/family-health/documents
+RUN addgroup -S app && adduser -S app -G app \
+    && mkdir -p /var/lib/family-health/documents \
+    && chown app:app /var/lib/family-health/documents
 WORKDIR /app
 COPY --from=build /app/target/family-health-backend-*.jar app.jar
 ENV DOCUMENT_STORAGE_DIR=/var/lib/family-health/documents

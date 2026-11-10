@@ -97,6 +97,11 @@ The 409 does reveal that an email is registered. Hiding it would need email veri
 | POST | `/families` | Signed in |
 | GET | `/families` | Returns only the caller's families |
 | GET | `/families/{familyId}` | Family member |
+| PUT | `/families/{familyId}` | Family manager. Renames: `{ name, version }`. |
+| DELETE | `/families/{familyId}` | Family manager, and the only member. Deletes every profile in it. |
+| PUT | `/families/{familyId}/photo` | Family manager. Multipart `file`. |
+| DELETE | `/families/{familyId}/photo` | Family manager |
+| GET | `/families/{familyId}/photo` | Family member. `image/jpeg`. |
 | POST | `/families/{familyId}/invitations` | Family manager. Offering a profile also needs `MANAGE` on it. |
 | GET | `/families/invitations/{token}` | Signed in, invited user. Shows the family, and the profile on offer. |
 | POST | `/families/invitations/{token}/accept` | Signed in, invited user |
@@ -105,9 +110,24 @@ The 409 does reveal that an email is registered. Hiding it would need email veri
 | GET | `/profiles/{profileId}` | `VIEW` |
 | PUT | `/profiles/{profileId}` | `EDIT` |
 | DELETE | `/profiles/{profileId}` | `MANAGE` |
+| PUT | `/profiles/{profileId}/photo` | `EDIT`. Multipart `file`. |
+| DELETE | `/profiles/{profileId}/photo` | `EDIT` |
+| GET | `/profiles/{profileId}/photo` | `VIEW`. `image/jpeg`. |
 | GET | `/profiles/{profileId}/grants` | `MANAGE` |
 | PUT | `/profiles/{profileId}/grants/{accountId}` | `MANAGE` |
 | DELETE | `/profiles/{profileId}/grants/{accountId}` | `MANAGE` |
+
+Family rules (D-031):
+
+- Family summaries and details include `photoUpdatedAt` (null without a photo) and `version`; profiles include `photoUpdatedAt`. The page adds it to the photo address, so a changed photo gets a new address.
+- A name may not match, ignoring case and spacing, another family that the account (on create or accept) or any member (on rename) belongs to: 409 `FAMILY_NAME_TAKEN`. Other accounts' families are never checked, so nothing about them is revealed.
+- Deleting a family with any other member returns 409 `FAMILY_HAS_OTHER_MEMBERS`. Success is 204; each profile deletion and the family deletion are audited.
+
+Photo rules:
+
+- JPEG or PNG by content, at most 5 MB (413 `FILE_TOO_LARGE`), at most 40 megapixels (400 `IMAGE_TOO_LARGE`). Anything else is 415 `UNSUPPORTED_FILE_TYPE`, and an empty or broken file 400 (`FILE_REQUIRED`, `IMAGE_UNREADABLE`).
+- The photo is cropped to its centre square, turned upright by its EXIF orientation, shrunk to at most 512 px, and re-encoded as JPEG, which drops EXIF data such as GPS location. Setting or removing it returns the updated profile or family summary; a profile or family without a photo returns 404 `PHOTO_NOT_FOUND`.
+- Photos are sent with `Cache-Control: private, max-age=3600`.
 
 Invitation rules:
 
@@ -215,7 +235,7 @@ Document content is never available through a public or storage URL. Responses u
 | GET | `/profiles/{id}/summaries/{summaryId}` | Read a summary | `VIEW` |
 | GET | `/profiles/{id}/summaries` | List summaries, newest first (Phase 16) | `VIEW` |
 | DELETE | `/profiles/{id}/summaries/{summaryId}` | Delete a summary; the records stay (Phase 16) | `EDIT` |
-| GET | `/profiles/{id}/summaries/{summaryId}/pdf` | Export as PDF | `VIEW` |
+| GET | `/profiles/{id}/summaries/{summaryId}/pdf` | Export as PDF (Phase 18): an A4 attachment, `Cache-Control: no-store`, audited as `PDF_EXPORTED` | `VIEW` |
 
 Every AI response includes these fields:
 

@@ -1,10 +1,11 @@
+import { Avatar } from '../../components/Avatar'
 import { HeartPulse, House, LogOut, Menu, UtensilsCrossed, X } from 'lucide-react'
 import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from 'react'
 import { logout, type Account } from '../../api/auth'
 import { ApiError } from '../../api/client'
 import { ErrorNote } from '../../components/Feedback'
 import { Link, navigate, profilePath, usePathname, useRoute } from '../../router'
-import { initials } from './initials'
+import { profilePhotoUrl } from '../../api/profiles'
 import { useNavProfiles } from './NavProfiles'
 
 type Props = {
@@ -94,12 +95,11 @@ function Navigation({
                     aria-current={active ? 'page' : undefined}
                     className={`${navItem} ${active ? navItemActive : ''}`}
                   >
-                    <span
-                      aria-hidden="true"
-                      className="grid size-7 shrink-0 place-items-center rounded-full bg-brand-800 text-xs font-semibold text-brand-100"
-                    >
-                      {initials(profile.fullName)}
-                    </span>
+                    <Avatar
+                      name={profile.fullName}
+                      photoUrl={profilePhotoUrl(profile)}
+                      className="size-7 bg-brand-800 text-xs font-semibold text-brand-100"
+                    />
                     <span className="min-w-0 truncate">{profile.fullName}</span>
                   </Link>
                 </li>

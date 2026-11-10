@@ -3,6 +3,7 @@ package com.familyhealth.family;
 import com.familyhealth.family.InvitedProfileLinks.KeepAccess;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.time.Instant;
 import java.util.List;
@@ -16,13 +17,19 @@ final class FamilyDtos {
 	record CreateFamilyRequest(@NotBlank @Size(max = 100) String name) {
 	}
 
-	record FamilySummary(UUID id, String name, FamilyRole role) {
+	/** Renames a family. Managers only. */
+	record RenameFamilyRequest(@NotBlank @Size(max = 100) String name, @NotNull Long version) {
+	}
+
+	/** {@code photoUpdatedAt} is null without a photo; it changes whenever the photo does. */
+	record FamilySummary(UUID id, String name, FamilyRole role, Instant photoUpdatedAt, Long version) {
 	}
 
 	record FamilyMember(UUID accountId, String displayName, String email, FamilyRole role) {
 	}
 
-	record FamilyResponse(UUID id, String name, FamilyRole role, List<FamilyMember> members) {
+	record FamilyResponse(UUID id, String name, FamilyRole role, List<FamilyMember> members, Instant photoUpdatedAt,
+			Long version) {
 	}
 
 	/** {@code role} defaults to MEMBER. {@code profileId} offers that profile to the invited adult. */

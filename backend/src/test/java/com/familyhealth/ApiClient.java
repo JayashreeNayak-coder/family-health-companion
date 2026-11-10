@@ -96,6 +96,16 @@ public final class ApiClient {
 		return send(request);
 	}
 
+	/** A multipart PUT, as the photo endpoints take. */
+	public MockHttpServletResponse uploadPut(String path, String filename, String claimedType, byte[] content)
+			throws Exception {
+		MockMultipartHttpServletRequestBuilder request = MockMvcRequestBuilders
+			.multipart(org.springframework.http.HttpMethod.PUT, path)
+			.file(new MockMultipartFile("file", filename, claimedType, content));
+		request.header("X-CSRF-TOKEN", csrfToken());
+		return send(request);
+	}
+
 	/** Registers and signs in a new account, and returns its ID. */
 	public String signUp(String email, String displayName) throws Exception {
 		String id = JsonPath.read(register(email, PASSWORD, displayName).getContentAsString(), "$.id");
