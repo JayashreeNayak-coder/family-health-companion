@@ -6,6 +6,7 @@ import { Loading } from './components/Feedback'
 import { ToastProvider } from './components/Toast'
 import { AuthPage } from './features/auth/AuthPage'
 import { HomePage } from './features/home/HomePage'
+import { MealsPage } from './features/meals/MealsPage'
 import { ProfilePage } from './features/profiles/ProfilePage'
 import { AppShell } from './features/shell/AppShell'
 import { NavProfilesProvider } from './features/shell/NavProfiles'
@@ -106,6 +107,7 @@ export function App() {
       <NavProfilesProvider key={account.id}>
         <AppShell account={account} onSignedOut={() => setSession({ state: 'signedOut' })}>
           {(route.name === 'home' || isAuthRoute(route)) && <HomePage account={account} />}
+          {route.name === 'meals' && <MealsPage />}
           {route.name === 'profile' && (
             <ProfilePage key={route.profileId} profileId={route.profileId} section={route.section} />
           )}

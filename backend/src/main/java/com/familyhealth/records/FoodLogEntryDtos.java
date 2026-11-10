@@ -27,8 +27,18 @@ final class FoodLogEntryDtos {
 
 	}
 
+	/** Adds a saved recipe to the food log. The entry's description is the recipe's title. */
+	record FromRecipeRequest(MealType mealType, LocalDate occurredOn, LocalTime occurredTime) {
+
+		@AssertTrue(message = "a time needs a date")
+		boolean isOccurredTimeValid() {
+			return occurredTime == null || occurredOn != null;
+		}
+
+	}
+
 	record Response(UUID id, UUID profileId, String description, MealType mealType, LocalDate occurredOn,
-			@JsonFormat(pattern = "HH:mm") LocalTime occurredTime, Long version) {
+			@JsonFormat(pattern = "HH:mm") LocalTime occurredTime, UUID savedRecipeId, Long version) {
 	}
 
 }

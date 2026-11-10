@@ -1,4 +1,4 @@
-import { HeartPulse, House, LogOut, Menu, X } from 'lucide-react'
+import { HeartPulse, House, LogOut, Menu, UtensilsCrossed, X } from 'lucide-react'
 import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from 'react'
 import { logout, type Account } from '../../api/auth'
 import { ApiError } from '../../api/client'
@@ -63,6 +63,16 @@ function Navigation({
             >
               <House aria-hidden="true" className="size-4.5" />
               Home
+            </Link>
+          </li>
+          <li>
+            <Link
+              to="/meals"
+              aria-current={route.name === 'meals' ? 'page' : undefined}
+              className={`${navItem} ${route.name === 'meals' ? navItemActive : ''}`}
+            >
+              <UtensilsCrossed aria-hidden="true" className="size-4.5" />
+              Meal ideas
             </Link>
           </li>
         </ul>

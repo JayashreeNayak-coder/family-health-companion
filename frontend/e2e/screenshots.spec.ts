@@ -137,6 +137,7 @@ test('captures every page', async ({ page }, info) => {
     'Food log',
     'Documents',
     'Timeline',
+    'Summaries',
     'Access',
   ]
   for (const [index, tab] of tabs.entries()) {
@@ -166,4 +167,147 @@ test('captures every page', async ({ page }, info) => {
   await page.getByRole('button', { name: /^Delete Penicillin/ }).click()
   await expect(page.getByRole('dialog')).toBeVisible()
   await page.screenshot({ path: `e2e/screenshots/${info.project.name}/20-confirm-dialog.png` })
+  await page.keyboard.press('Escape')
+
+  // Meal ideas. The AI answer is stubbed in the browser, so no AI key is needed. Saving uses the real backend.
+  await page.route('**/api/v1/meal-assistant/general', (route) => route.fulfill({ json: MEAL_SUGGESTIONS }))
+  await page.goto('/meals')
+  await shot(page, '21-meal-ideas', info.project.name)
+  await page.getByLabel('Ingredients', { exact: true }).fill('rice, lentils, spinach, peanuts')
+  await page.getByLabel('Ingredients to avoid').fill('peanuts')
+  await page.getByRole('button', { name: 'Suggest recipes' }).click()
+  await page.getByRole('heading', { name: 'Spinach dal' }).waitFor()
+  await shot(page, '22-meal-suggestions', info.project.name)
+  await page.getByRole('button', { name: 'Save to food log: Spinach dal' }).click()
+  await expect(page.getByRole('dialog')).toBeVisible()
+  await page.screenshot({ path: `e2e/screenshots/${info.project.name}/23-save-recipe-dialog.png` })
+  await accessible(page, 'save recipe dialog')
+  await page.getByRole('dialog').getByRole('button', { name: 'Save to food log' }).click()
+  await expect(page.getByText(/^Added to .*food log$/)).toBeVisible()
+
+  // Health-aware mode reads the person's real records from the backend; the AI answer is stubbed.
+  await page.route('**/api/v1/profiles/*/meal-assistant/health-aware', (route) =>
+    route.fulfill({ json: HEALTH_AWARE_SUGGESTIONS }),
+  )
+  await page.getByLabel('A family member').check()
+  await page.getByLabel('Person').selectOption({ label: 'Ravi Demo' })
+  await page.getByLabel(/I understand that Ravi Demo/).check()
+  await shot(page, '24-meal-health-aware-form', info.project.name)
+  await page.getByRole('button', { name: 'Suggest recipes' }).click()
+  await page.getByText('Records used for these ideas').waitFor()
+  await shot(page, '25-meal-health-aware-suggestions', info.project.name)
+
+  // A summary. The AI answer is stubbed; the list, storage, and screen are real.
+  await page.route('**/api/v1/profiles/*/summaries', async (route) => {
+    if (route.request().method() !== 'POST') {
+      return route.fallback()
+    }
+    return route.fulfill({ status: 201, json: { ...SUMMARY, profileId: 'stub', createdAt: new Date().toISOString() } })
+  })
+  await page.goto('/')
+  await page.getByRole('main').getByRole('link', { name: 'Ravi Demo' }).click()
+  await page.getByRole('navigation', { name: 'Profile sections' }).getByRole('link', { name: 'Summaries' }).click()
+  await page.getByLabel(/I understand that Ravi Demo/).check()
+  await page.getByRole('button', { name: 'Summarise records' }).click()
+  await page.getByText('Records that disagree').waitFor()
+  await shot(page, '26-summary', info.project.name)
 })
+
+const SUMMARY = {
+  id: 'stub-summary',
+  contentType: 'AI_GENERATED',
+  promptVersion: 'summaries-v1',
+  model: 'stub',
+  periodFrom: '2025-11-09',
+  periodTo: '2026-11-09',
+  points: [
+    {
+      topic: 'ALLERGIES',
+      text: 'Allergy to Penicillin (synthetic).',
+      sources: [{ ref: 'R1', type: 'ALLERGY', id: 'a', date: null, title: 'Penicillin (synthetic)', detail: null, sourceType: 'USER_REPORTED' }],
+    },
+    {
+      topic: 'LAB_RESULTS',
+      text: 'HbA1c was 6.1 % on 2026-02-10 and 5.8 % on 2026-08-10, as recorded.',
+      sources: [
+        { ref: 'R2', type: 'LAB_RESULT', id: 'b', date: '2026-02-10', title: 'HbA1c', detail: '6.1 %', sourceType: 'DOCUMENTED' },
+        { ref: 'R3', type: 'LAB_RESULT', id: 'c', date: '2026-08-10', title: 'HbA1c', detail: '5.8 %', sourceType: 'USER_REPORTED' },
+      ],
+    },
+  ],
+  gaps: ['The medication Synthetic tablet has no dosage recorded.'],
+  conflicts: [
+    {
+      text: 'Two records give different start dates for Synthetic tablet.',
+      sources: [
+        { ref: 'R4', type: 'MEDICATION', id: 'd', date: '2026-01-05', title: 'Synthetic tablet', detail: null, sourceType: 'USER_REPORTED' },
+        { ref: 'R5', type: 'MEDICATION', id: 'e', date: '2026-01-15', title: 'Synthetic tablet', detail: null, sourceType: 'DOCUMENTED' },
+      ],
+    },
+  ],
+  limitations: [
+    'This summary only restates recorded information. It does not interpret results or give advice, and records may be incomplete.',
+    'No symptoms are recorded in this period.',
+    '"From document" means taken from an attached document. The documents were not checked.',
+  ],
+  disclaimer:
+    'AI-generated summary of recorded information. It is not medical advice, a diagnosis, or a medical certificate. Talk to a qualified healthcare professional about health questions.',
+}
+
+const HEALTH_AWARE_SUGGESTIONS = {
+  contentType: 'AI_GENERATED',
+  mode: 'HEALTH_AWARE',
+  promptVersion: 'recipes-v1',
+  recipes: [
+    {
+      title: 'Vegetable pulao',
+      minutes: 30,
+      servings: 2,
+      ingredients: ['1 cup rice', '1 cup mixed vegetables', '1 tbsp oil', 'Salt to taste'],
+      steps: ['Fry the vegetables in the oil.', 'Add the rice, water, and salt, and cook until done.'],
+      avoidMatches: [],
+    },
+  ],
+  limitations: [
+    'Based only on what is recorded for this person. Records may be incomplete or out of date.',
+    'No dietary restrictions or preferences are recorded for this person.',
+    'No health conditions were included.',
+    'Recorded allergies and ingredients to avoid were checked by simple word matching, which can miss other names and foods made from them. Check every ingredient yourself.',
+  ],
+  disclaimer:
+    'These are AI-generated recipe ideas, not medical or nutrition advice. They are not confirmed safe for this person.',
+  considered: { allergies: ['Penicillin'], restrictions: [], preferences: [], conditions: [] },
+}
+
+const MEAL_SUGGESTIONS = {
+  contentType: 'AI_GENERATED',
+  mode: 'GENERAL',
+  promptVersion: 'recipes-v1',
+  recipes: [
+    {
+      title: 'Spinach dal',
+      minutes: 35,
+      servings: 3,
+      ingredients: ['1 cup yellow lentils', '2 cups chopped spinach', '1 tsp cumin seeds', '1 tbsp oil', 'Salt to taste'],
+      steps: [
+        'Rinse the lentils and cook them in three cups of water until soft.',
+        'Heat the oil, add the cumin seeds, and let them sizzle.',
+        'Add the spinach and cook until it wilts, then stir in the lentils and salt.',
+      ],
+      avoidMatches: [],
+    },
+    {
+      title: 'Peanut rice',
+      minutes: 20,
+      servings: 2,
+      ingredients: ['2 cups cooked rice', '1/4 cup roasted peanuts', '1 tsp mustard seeds', 'Curry leaves'],
+      steps: ['Temper the mustard seeds and curry leaves in oil.', 'Add the peanuts and rice, and toss well.'],
+      avoidMatches: ['peanuts'],
+    },
+  ],
+  limitations: [
+    "General mode doesn't use any family member's health records.",
+    'Ingredients to avoid were checked by simple word matching, which can miss other names and foods made from them. Check every ingredient yourself.',
+  ],
+  disclaimer: 'These are AI-generated recipe ideas, not medical or nutrition advice.',
+}

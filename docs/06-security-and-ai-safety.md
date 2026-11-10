@@ -118,9 +118,9 @@ To keep the table from being filled without signing in, three things aren't reco
 |---|---|---|
 | Document extraction | The document only | Draft stays separate until approved per item. Fields not found are `null`. If unreliable, the document is kept and no structured data is created. |
 | Voice transcription (deferred, D-022) | Audio only; not kept after transcription | Text is returned for the user to edit |
-| Summary | Selected records in the chosen period, with dates and source types | Must cite source records. Reports gaps and conflicts. No interpretation. |
-| General meals | Ingredients and request text only | Uses no profile data, even if a member is selected in the UI |
-| Health-aware meals | Allergies, restrictions, and preferences for the selected profile; conditions only if the user confirms they're relevant | Discloses missing data. Never claims safety. |
+| Summary | Allergies, undated records, and conditions, visits, symptoms, medications, and lab results in the chosen period: type, date, title, the value or dosage line, and source type, under `R1`-style references. No notes, documents, names, or database IDs. | Must cite source records; the backend rejects any answer citing a record it didn't send. Reports gaps and conflicts. No interpretation. Takes no free text, so it can't be asked for a diagnosis. The user confirms each time. |
+| General meals | Ingredients and request text only | Uses no profile data, even if a member is selected in the UI. The endpoint takes no profile ID. Recipes naming an ingredient the user listed to avoid are flagged, never called safe. |
+| Health-aware meals | Allergen names, restriction and preference text for the selected profile; condition names only for the conditions the user ticks. No reactions, notes, dates, names, or documents. | Discloses missing data. Never claims safety. The user sees what will be sent and confirms each time; the response lists what was used. |
 
 Names, dates of birth, and contact details are removed from AI requests unless the feature requires them.
 
@@ -151,7 +151,7 @@ The check can therefore only ever flag a conflict. **A recipe with no flag must 
 - Provider unavailability returns 503, while all manual workflows keep working.
 - **Provider selection criteria (Phase 12):** no training on submitted data, a clear retention policy, structured output, and document and audio support at an acceptable cost.
 - **Chosen provider:** Google Gemini, called over HTTP with the key in a header, from `ai.AiConfig` only. The owner plans to use the free tier, which does **not** meet the first criterion: Google may use free-tier inputs and outputs to improve its products, and human reviewers may read them. The free tier is therefore acceptable only with synthetic demo documents, and the UI says so. Real health data needs the paid tier or another provider first (`DECISIONS.md`, D-021).
-- **Limits:** 20 extraction requests per account and 200 overall in any 24 hours by default (`AI_LIMIT_PER_ACCOUNT_PER_DAY`, `AI_LIMIT_GLOBAL_PER_DAY`). A job is tried at most twice, and only after a timeout or provider outage.
+- **Limits:** for each AI feature separately (document extraction, general meals, health-aware meals, summaries), 20 requests per account and 200 overall in any 24 hours by default (`AI_LIMIT_PER_ACCOUNT_PER_DAY`, `AI_LIMIT_GLOBAL_PER_DAY`). A job is tried at most twice, and only after a timeout or provider outage.
 
 ## 9. Demo environment
 

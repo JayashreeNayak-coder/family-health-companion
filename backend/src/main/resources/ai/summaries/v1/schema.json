@@ -1,0 +1,30 @@
+{
+  "type": "OBJECT",
+  "properties": {
+    "points": {
+      "type": "ARRAY",
+      "items": {
+        "type": "OBJECT",
+        "properties": {
+          "topic": { "type": "STRING", "enum": ["CONDITIONS", "ALLERGIES", "MEDICATIONS", "LAB_RESULTS", "VISITS", "SYMPTOMS"] },
+          "text": { "type": "STRING" },
+          "refs": { "type": "ARRAY", "items": { "type": "STRING" } }
+        },
+        "required": ["topic", "text", "refs"]
+      }
+    },
+    "gaps": { "type": "ARRAY", "items": { "type": "STRING" } },
+    "conflicts": {
+      "type": "ARRAY",
+      "items": {
+        "type": "OBJECT",
+        "properties": {
+          "text": { "type": "STRING" },
+          "refs": { "type": "ARRAY", "items": { "type": "STRING" } }
+        },
+        "required": ["text", "refs"]
+      }
+    }
+  },
+  "required": ["points", "gaps", "conflicts"]
+}

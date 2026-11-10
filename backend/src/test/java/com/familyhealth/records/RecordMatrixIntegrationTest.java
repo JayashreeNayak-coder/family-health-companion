@@ -53,7 +53,11 @@ class RecordMatrixIntegrationTest extends IntegrationTestBase {
 				new Resource("lab-results", Map.of("testName", "Synthetic HbA1c", "valueNumeric", 5.4, "unit", "%"),
 						"testName", Map.of("testName", "Synthetic HbA1c")),
 				new Resource("food-log", Map.of("description", "Synthetic rice and dal", "mealType", "LUNCH"),
-						"description", Map.of("description", "Rice", "occurredTime", "13:00")));
+						"description", Map.of("description", "Rice", "occurredTime", "13:00")),
+				new Resource("recipes", Map.of("title", "Synthetic dal", "ingredients", List.of("1 cup lentils"), "steps",
+						List.of("Cook the lentils."), "mode", "GENERAL", "promptVersion", "recipes-v1"), "title",
+						Map.of("title", "Synthetic dal", "ingredients", List.of(), "steps", List.of("Cook."), "mode",
+								"GENERAL", "promptVersion", "recipes-v1")));
 	}
 
 	@Autowired

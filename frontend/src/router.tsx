@@ -15,6 +15,7 @@ export const PROFILE_SECTIONS = [
   'food',
   'documents',
   'timeline',
+  'summaries',
   'access',
 ] as const
 
@@ -24,6 +25,7 @@ export type Route =
   | { name: 'home' }
   | { name: 'signIn' }
   | { name: 'register' }
+  | { name: 'meals' }
   | { name: 'profile'; profileId: string; section: ProfileSection }
   | { name: 'notFound' }
 
@@ -41,6 +43,9 @@ export function parseRoute(pathname: string): Route {
   }
   if (parts.length === 1 && parts[0] === 'register') {
     return { name: 'register' }
+  }
+  if (parts.length === 1 && parts[0] === 'meals') {
+    return { name: 'meals' }
   }
   if (parts[0] === 'profiles' && parts.length >= 2 && parts.length <= 3) {
     const section = parts[2] ?? 'overview'

@@ -26,6 +26,7 @@ import {
   type ResourceConfig,
 } from '../records/resources'
 import { TimelinePanel } from '../records/TimelinePanel'
+import { SummariesPanel } from '../summaries/SummariesPanel'
 import { AccessPanel } from './AccessPanel'
 import { DetailsPanel } from './DetailsPanel'
 import { OverviewPanel } from './OverviewPanel'
@@ -42,6 +43,7 @@ const BASE_TABS: Tab[] = [
   { id: 'food', label: 'Food log' },
   { id: 'documents', label: 'Documents' },
   { id: 'timeline', label: 'Timeline' },
+  { id: 'summaries', label: 'Summaries' },
 ]
 
 const SECTIONS: Record<string, ResourceConfig[]> = {
@@ -157,6 +159,9 @@ export function ProfilePage({ profileId, section: tab }: Props) {
             />
           )}
           {shown === 'timeline' && <TimelinePanel profileId={profile.id} />}
+          {shown === 'summaries' && (
+            <SummariesPanel profileId={profile.id} name={profile.fullName} canEdit={profile.accessLevel !== 'VIEW'} />
+          )}
           {shown === 'access' && <AccessPanel profile={profile} />}
         </>
       )}

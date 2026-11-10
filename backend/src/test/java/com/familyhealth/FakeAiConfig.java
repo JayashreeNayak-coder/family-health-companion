@@ -14,4 +14,16 @@ class FakeAiConfig {
 		return new FakeDocumentExtractor();
 	}
 
+	@Bean
+	@Primary
+	FakeRecipeGenerator fakeRecipeGenerator() {
+		return new FakeRecipeGenerator();
+	}
+
+	@Bean
+	@Primary
+	FakeSummaryGenerator fakeSummaryGenerator() {
+		return new FakeSummaryGenerator();
+	}
+
 }

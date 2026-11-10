@@ -2,6 +2,8 @@ package com.familyhealth.ai;
 
 import com.familyhealth.ai.gemini.GeminiClient;
 import com.familyhealth.ai.gemini.GeminiDocumentExtractor;
+import com.familyhealth.ai.gemini.GeminiRecipeGenerator;
+import com.familyhealth.ai.gemini.GeminiSummaryGenerator;
 import java.time.Duration;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -31,6 +33,20 @@ class AiConfig {
 			@Value("${app.ai.gemini.fallback-model:}") String fallbackModel, ExtractionResponseParser parser,
 			PromptResources prompts) {
 		return new GeminiDocumentExtractor(client, model, fallbackModel, parser, prompts);
+	}
+
+	@Bean
+	RecipeGenerator recipeGenerator(GeminiClient client, JsonMapper json, @Value("${app.ai.gemini.model}") String model,
+			@Value("${app.ai.gemini.fallback-model:}") String fallbackModel, PromptResources prompts) {
+		return new GeminiRecipeGenerator(client, json, model, fallbackModel, new RecipeResponseParser(json), prompts);
+	}
+
+	@Bean
+	SummaryGenerator summaryGenerator(GeminiClient client, JsonMapper json,
+			@Value("${app.ai.gemini.model}") String model,
+			@Value("${app.ai.gemini.fallback-model:}") String fallbackModel, PromptResources prompts) {
+		return new GeminiSummaryGenerator(client, json, model, fallbackModel, new SummaryResponseParser(json),
+				prompts);
 	}
 
 }

@@ -62,6 +62,12 @@ public class GeminiClient {
 	 * text can't pose as instructions. Temperature 0 keeps copying as literal as possible.
 	 */
 	public Output generate(String model, String systemInstruction, List<Part> parts, JsonNode responseSchema) {
+		return generate(model, systemInstruction, parts, responseSchema, 0);
+	}
+
+	/** As above, with a higher temperature for features that should vary, such as recipe ideas. */
+	public Output generate(String model, String systemInstruction, List<Part> parts, JsonNode responseSchema,
+			double temperature) {
 		if (!hasKey()) {
 			throw new AiException(Code.NOT_CONFIGURED, "No Gemini API key is configured");
 		}
@@ -78,7 +84,7 @@ public class GeminiClient {
 			}
 		}
 		ObjectNode config = body.putObject("generationConfig");
-		config.put("temperature", 0);
+		config.put("temperature", temperature);
 		if (responseSchema != null) {
 			config.put("responseMimeType", "application/json");
 			config.set("responseSchema", responseSchema);

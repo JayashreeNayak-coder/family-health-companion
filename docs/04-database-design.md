@@ -209,8 +209,8 @@ Per-item status allows partial approval. Draft data stays out of the confirmed r
 | Table | Main columns |
 |---|---|
 | `food_log_entry` | `profile_id`, `description` NOT NULL, `meal_type` (`BREAKFAST`, `LUNCH`, `DINNER`, `SNACK`, `OTHER`, or NULL), `occurred_on`, `occurred_time`, `saved_recipe_id` nullable FK (added in Phase 14) |
-| `saved_recipe` | `profile_id`, `created_by`, `title`, `ingredients jsonb`, `steps jsonb`, `mode` (`GENERAL`, `HEALTH_AWARE`), `prompt_version` |
-| `health_summary` | `profile_id`, `generated_by`, `content`, `period_from`, `period_to`, `source_refs jsonb`, `provider`, `model`, `prompt_version` |
+| `saved_recipe` | `profile_id`, `created_by`, `title`, `ingredients jsonb` and `steps jsonb` (arrays of text), `mode` (`GENERAL`, `HEALTH_AWARE`), `prompt_version`. Added in Phase 14 (V11). `food_log_entry.saved_recipe_id` is `ON DELETE SET NULL`. |
+| `health_summary` | `profile_id`, `generated_by`, `content jsonb` (points, gaps, conflicts, limitations, and a copy of each cited record), `period_from`, `period_to`, `source_refs jsonb` (type and ID of every record sent), `provider`, `model`, `prompt_version`. Added in Phase 16 (V12); never updated. |
 | `emergency_card` | `profile_id` UNIQUE, `enabled`, `token_hash` UNIQUE, `token_rotated_at` |
 | `emergency_card_item` | `card_id`, `item_type`, `display_text`, `display_order` |
 | `audit_event` | `occurred_at`, `actor_account_id` nullable, `action`, `target_type`, `target_id`, `profile_id` nullable, `outcome`, `metadata jsonb` |

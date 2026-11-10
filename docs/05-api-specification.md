@@ -204,9 +204,12 @@ Document content is never available through a public or storage URL. Responses u
 | POST | `/meal-assistant/general` | General recipes; uses no profile data | Signed in |
 | POST | `/profiles/{id}/meal-assistant/health-aware` | Uses that profile's relevant data | `VIEW` |
 | POST | `/profiles/{id}/recipes` | Save a recipe | `EDIT` |
+| GET, PUT, DELETE | `/profiles/{id}/recipes`, `/profiles/{id}/recipes/{recipeId}` | List, read, rename or edit, and delete saved recipes, as in section 5 (read `VIEW`, write `EDIT`) | `VIEW` / `EDIT` |
 | POST | `/profiles/{id}/food-log/from-recipe/{recipeId}` | Add to food log | `EDIT` |
 | POST | `/profiles/{id}/summaries` | Generate a record-based summary | `VIEW` |
 | GET | `/profiles/{id}/summaries/{summaryId}` | Read a summary | `VIEW` |
+| GET | `/profiles/{id}/summaries` | List summaries, newest first (Phase 16) | `VIEW` |
+| DELETE | `/profiles/{id}/summaries/{summaryId}` | Delete a summary; the records stay (Phase 16) | `EDIT` |
 | GET | `/profiles/{id}/summaries/{summaryId}/pdf` | Export as PDF | `VIEW` |
 
 Every AI response includes these fields:
@@ -218,6 +221,26 @@ Every AI response includes these fields:
   "disclaimer": "This is a suggestion, not medical advice."
 }
 ```
+
+### Meal assistant (Phase 14)
+
+`POST /meal-assistant/general` takes `ingredients` (1 to 20, each up to 80 characters), optional `maxMinutes` (5 to 600), optional `preferences` (up to 300), and optional `avoid` (up to 20 ingredients to leave out, such as allergies). It takes no profile ID and sends only these fields to the provider. Recipes are returned, not stored.
+
+The response adds `mode`, `promptVersion`, and `recipes`: one to three, each with `title`, `minutes` and `servings` (null when not given), `ingredients`, `steps`, and `avoidMatches`. `avoidMatches` lists the `avoid` terms found in the recipe's text by plain matching (`docs/06` section 8.5). An empty list never means safe.
+
+Errors: `AI_UNAVAILABLE` (503: no key, timeout, outage, or provider limit), `AI_LIMIT_REACHED` (429), `AI_BAD_RESPONSE` (502: output didn't match the schema), `AI_DECLINED` (422: the provider refused).
+
+`POST /profiles/{id}/meal-assistant/health-aware` (Phase 15, `VIEW`) takes the same fields plus optional `conditionIds` (up to 20). The backend adds that profile's recorded allergen names, dietary restriction and preference text, and the names of the listed conditions only. A condition ID that isn't recorded for the profile returns 400 on `conditionIds`, before anything is sent. Access is checked before AI availability. The response has `mode: "HEALTH_AWARE"` and `considered` (`allergies`, `restrictions`, `preferences`, `conditions`): exactly what was sent. `limitations` names what is missing, such as no recorded allergies. Recorded allergies are added to the `avoidMatches` check. In general mode, `considered` is null.
+
+A saved recipe's request is `title`, `ingredients`, `steps`, `mode`, and `promptVersion` (`recipes-vN`). `mode` and `promptVersion` can't change after creation. Its response has `contentType: "AI_GENERATED"`.
+
+`POST /profiles/{id}/food-log/from-recipe/{recipeId}` takes optional `mealType`, `occurredOn`, and `occurredTime`, and creates a food log entry whose description is the recipe's title. Food log responses include `savedRecipeId`, which becomes null if the recipe is deleted. A recipe from another profile returns 404.
+
+### Summaries (Phase 16)
+
+`POST /profiles/{id}/summaries` takes optional `periodFrom` and `periodTo` and no free text. It returns 201 with the stored summary. The backend sends the profile's allergies, its undated records, and its conditions, visits, symptoms, medications, and lab results in the period (newest 150 at most), each under a reference such as `R1`, never a database ID. Notes, documents, contacts, the food log, and names are not sent. With nothing to send it returns 422 `NO_RECORDS` without calling the provider. AI errors are as for meals.
+
+A summary has `points` (`topic`, `text`, `sources`), `gaps`, `conflicts` (`text`, `sources`), `limitations` (written by the backend, naming record types with nothing recorded), `disclaimer`, `promptVersion`, and `model`. Each source is a copy of the cited record when the summary was made: `type`, `id`, `date` (null when unknown), `title`, `detail`, and `sourceType`. An answer citing a record that wasn't sent, or a point citing none, is rejected (502) and nothing is stored.
 
 Switching meal modes is a frontend concern: ingredients stay in client state, so the user doesn't re-enter them.
 

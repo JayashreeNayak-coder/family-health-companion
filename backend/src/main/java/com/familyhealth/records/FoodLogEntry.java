@@ -27,6 +27,10 @@ class FoodLogEntry extends ProfileRecord {
 	@Column(name = "occurred_time")
 	private LocalTime occurredTime;
 
+	/** The saved recipe this entry was made from, or null. Set once, at creation. */
+	@Column(name = "saved_recipe_id", updatable = false)
+	private UUID savedRecipeId;
+
 	protected FoodLogEntry() {
 	}
 
@@ -39,6 +43,14 @@ class FoodLogEntry extends ProfileRecord {
 		this.mealType = mealType;
 		this.occurredOn = occurredOn;
 		this.occurredTime = occurredTime;
+	}
+
+	void linkRecipe(UUID savedRecipeId) {
+		this.savedRecipeId = savedRecipeId;
+	}
+
+	UUID savedRecipeId() {
+		return savedRecipeId;
 	}
 
 	String description() {

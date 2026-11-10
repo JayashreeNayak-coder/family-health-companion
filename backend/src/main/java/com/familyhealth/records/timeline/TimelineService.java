@@ -14,7 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-class TimelineService {
+public class TimelineService {
 
 	/** Newest first. An entry with no time sorts after the timed entries of its day. */
 	private static final Comparator<TimelineEntry> NEWEST_FIRST = Comparator
@@ -23,7 +23,7 @@ class TimelineService {
 		.thenComparing(TimelineEntry::title)
 		.thenComparing(TimelineEntry::id);
 
-	record Timeline(List<TimelineEntry> entries, List<TimelineEntry> dateUnknown) {
+	public record Timeline(List<TimelineEntry> entries, List<TimelineEntry> dateUnknown) {
 	}
 
 	private final List<TimelineSource> sources;
