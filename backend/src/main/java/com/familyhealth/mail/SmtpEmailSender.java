@@ -6,19 +6,16 @@ import jakarta.mail.AuthenticationFailedException;
 import jakarta.mail.MessagingException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.MailAuthenticationException;
 import org.springframework.mail.MailException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
-import org.springframework.stereotype.Component;
 
 /**
  * SMTP through Spring Mail, Gmail by default (DECISIONS.md, D-028). Message text is never logged,
- * except by the development fallback when no mail account is set.
+ * except by the development fallback when no mail account is set. Chosen by {@link MailConfig}.
  */
-@Component
 class SmtpEmailSender implements EmailSender {
 
 	private static final Logger log = LoggerFactory.getLogger(SmtpEmailSender.class);
@@ -33,9 +30,7 @@ class SmtpEmailSender implements EmailSender {
 
 	private final ExecutorService background = Executors.newVirtualThreadPerTaskExecutor();
 
-	SmtpEmailSender(JavaMailSender mail, @Value("${spring.mail.username:}") String username,
-			@Value("${app.mail.from:}") String from,
-			@Value("${app.mail.log-when-unconfigured:false}") boolean logWhenUnconfigured) {
+	SmtpEmailSender(JavaMailSender mail, String username, String from, boolean logWhenUnconfigured) {
 		this.mail = mail;
 		this.username = username;
 		this.from = from == null || from.isBlank() ? username : from;

@@ -12,6 +12,9 @@ RUN addgroup -S app && adduser -S app -G app \
 WORKDIR /app
 COPY --from=build /app/target/family-health-backend-*.jar app.jar
 ENV DOCUMENT_STORAGE_DIR=/var/lib/family-health/documents
+# Fits a 512 MB host such as Render's free plan (DECISIONS.md, D-033): the heap takes at most 70% of the
+# container's memory, leaving room for the rest of the JVM. Serial GC suits one small CPU. A host can override this.
+ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=70 -XX:+UseSerialGC -Xss512k"
 USER app
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]

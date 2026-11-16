@@ -7,21 +7,19 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.regex.Pattern;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
 
 /**
  * Files on local disk, in a folder outside anything the web server serves. Keys are checked
  * against the format this application generates, so a key can never reach outside the folder.
+ * Chosen by {@link DocumentStorageConfig} when no bucket is set.
  */
-@Component
 class LocalDocumentStorage implements DocumentStorage {
 
 	private static final Pattern KEY = Pattern.compile("[A-Za-z0-9_-]{43}");
 
 	private final Path root;
 
-	LocalDocumentStorage(@Value("${app.documents.storage-dir}") String storageDir) {
+	LocalDocumentStorage(String storageDir) {
 		if (storageDir == null || storageDir.isBlank()) {
 			throw new IllegalStateException("Set DOCUMENT_STORAGE_DIR to a private folder for uploaded documents");
 		}

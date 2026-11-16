@@ -56,6 +56,13 @@ app:
     from: ${MAIL_FROM:}
     # Development only: when no mail account is set, or sending fails, write the message (and its link) to the log.
     log-when-unconfigured: false
+    brevo:
+      # When set, email goes through Brevo's HTTPS API instead of SMTP (D-033). MAIL_FROM is then the verified sender.
+      api-key: ${BREVO_API_KEY:}
+      base-url: ${BREVO_BASE_URL:https://api.brevo.com}
+  proxy:
+    # Set on a host behind the Cloudflare Pages proxy (D-033). Requests without it are refused, except the health check.
+    secret: ${PROXY_SECRET:}
   password-reset:
     valid-for: 30m
     max-per-account-per-hour: 3
@@ -84,9 +91,16 @@ app:
       max-attempts: 2
       stale-after: 5m
   documents:
-    # Private folder for uploaded originals, outside anything the web server serves. Required.
+    # Private folder for uploaded originals, outside anything the web server serves. Required unless a bucket is set.
     storage-dir: ${DOCUMENT_STORAGE_DIR:}
     max-file-size: 10MB
+    s3:
+      # When a bucket is set, files go to private S3-compatible storage (Cloudflare R2, D-033) instead of the folder above.
+      bucket: ${STORAGE_BUCKET:}
+      endpoint: ${STORAGE_ENDPOINT:}
+      region: ${STORAGE_REGION:auto}
+      access-key: ${STORAGE_ACCESS_KEY:}
+      secret-key: ${STORAGE_SECRET_KEY:}
   session:
     absolute-timeout: 12h
   login-rate-limit:
@@ -94,6 +108,10 @@ app:
     max-failures-per-account: 10
     # Higher, because a classroom or household shares one address.
     max-failures-per-address: 50
+  registration-rate-limit:
+    # Per IP address (docs/06 section 2). Enough for a classroom sharing one address.
+    window: 1h
+    max-per-address: 20
   emergency-card:
     # Public card reads per IP address (docs/06 section 6). Found or not, every read counts.
     rate-limit:

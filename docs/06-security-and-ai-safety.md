@@ -36,7 +36,7 @@
 **Known limitations:**
 - Rate limit counters are held in memory, so a restart clears them and they aren't shared between instances. This suits the single-instance prototype.
 - Someone who knows an email can block that account's login for 15 minutes by failing repeatedly.
-- `/auth/register` has no rate limit, so it can be used to discover registered emails or to consume CPU through password hashing. This should be closed before going online in Phase 3.
+- `/auth/register` is limited to 20 valid attempts an hour per IP address (Phase 3, D-033). It still reveals whether an email is registered, at that rate.
 
 - Password reset requests are limited per account, not per address, so someone can make the app send up to 3 emails an hour to any registered address.
 - With Gmail SMTP, emails come from a personal Gmail address and are limited by Gmail's daily sending cap. A real sending domain belongs with Phase 3.

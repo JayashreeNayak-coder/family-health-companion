@@ -65,7 +65,7 @@ Phase 4 uses a server-side session in a cookie, with CSRF protection.
 
 | Method | Path | Access | Request | Success |
 |---|---|---|---|---|
-| POST | `/auth/register` | Public | `email`, `password`, `displayName` | 201, account. Does not sign in. |
+| POST | `/auth/register` | Public | `email`, `password`, `displayName` | 201, account. Does not sign in. 429 with `Retry-After` after 20 attempts an hour from one address. |
 | POST | `/auth/login` | Public | `email`, `password` | 200, account. Rotates the session ID and CSRF token. |
 | POST | `/auth/logout` | Signed in | None | 204 |
 | GET | `/auth/me` | Signed in | None | 200, account |

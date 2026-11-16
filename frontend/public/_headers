@@ -1,0 +1,8 @@
+# Cloudflare Pages: headers for the static app, matching frontend/nginx.conf (DECISIONS.md, D-033).
+# API responses come from the backend through functions/, which sets its own headers.
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: no-referrer
+  X-Frame-Options: DENY
+  Content-Security-Policy: default-src 'self'; img-src 'self' blob:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
+  Strict-Transport-Security: max-age=31536000

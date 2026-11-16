@@ -24,6 +24,6 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: './src/test/setup.ts',
     // Playwright owns e2e/. Vitest runs only the component tests.
-    include: ['src/**/*.test.{ts,tsx}'],
+    include: ['src/**/*.test.{ts,tsx}', 'edge/**/*.test.ts'],
   },
 })

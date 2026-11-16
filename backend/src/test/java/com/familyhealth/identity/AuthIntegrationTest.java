@@ -66,6 +66,20 @@ class AuthIntegrationTest extends IntegrationTestBase {
 		assertThat(client.get(ME).getStatus()).isEqualTo(401);
 	}
 
+	/** A public demo must not be fillable with accounts from one address (docs/06 section 2). */
+	@Test
+	void registrationIsLimitedPerAddress() throws Exception {
+		for (int i = 0; i < 20; i++) {
+			assertThat(client.register(ApiClient.uniqueEmail(), ApiClient.PASSWORD).getStatus()).isEqualTo(201);
+		}
+
+		MockHttpServletResponse limited = client.register(ApiClient.uniqueEmail(), ApiClient.PASSWORD);
+		assertThat(limited.getStatus()).isEqualTo(429);
+		assertThat(limited.getHeader("Retry-After")).isNotNull();
+		assertThat(new ApiClient(mockMvc).register(ApiClient.uniqueEmail(), ApiClient.PASSWORD).getStatus())
+			.isEqualTo(201);
+	}
+
 	@Test
 	void emailIsCaseInsensitiveAndStoredLowercase() throws Exception {
 		String mixedCase = "User-" + UUID.randomUUID() + "@Example.TEST";

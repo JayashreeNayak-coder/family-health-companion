@@ -1,8 +1,8 @@
 # Family Health Companion
 ## Project Status
 
-**Last updated:** 2026-11-10
-**Current phase:** Phases 5 to 12 and 14 to 18 complete. Family management (rename, unique names, delete) and profile and family photos added at the owner's request (D-031). Phase 19 (synthetic demo data, security review, presentation prep) is next. UI redesign UI-1 to UI-7 complete and committed. Phase 3 (deployment) is waiting on the owner.
+**Last updated:** 2026-11-11
+**Current phase:** Phase 3a (hosting code) done for free hosting on Cloudflare Pages, Render, Neon, and R2 (`DECISIONS.md`, D-033). Phase 3b (creating the accounts and deploying) is the owner's, following `docs/08` section 9. Phase 19 (synthetic demo data, security review, presentation prep) comes after.
 **Application code:** Accounts (password or Google sign-in, with password reset by email), families, profiles and access grants, conditions, allergies, dietary items, emergency contacts, visits, symptoms, medications with schedules and adherence, lab results with trends, food log, document upload with attachments on records, AI reading of documents as a reviewed draft (Gemini), the timeline, and the meal assistant (general and for a family member) with saved recipes and adding a recipe to a food log, cited record summaries with PDF export, an emergency card shared by link or QR code, renaming and deleting families, and photos for profiles and families.
 
 ## Environment
@@ -34,7 +34,8 @@
 | 2 | Design baseline: finalize `docs/04` to `docs/08`, fix inconsistencies | Done |
 | 4 | Identity, sessions, and audit log | Done |
 | 5 | Family, profiles, and authorization | Done |
-| 3 | Deploy online with HTTPS (runs after Phase 5; needs budget, domain, and hosting account) | Waiting on the owner |
+| 3a | Hosting code: R2 storage, Brevo email, Pages proxy and proxy secret, registration limit, `render.yaml` (D-033) | Done |
+| 3b | Create the Neon, R2, Brevo, Render, and Pages accounts and deploy (`docs/08` section 9) | Waiting on the owner |
 | 6 | Conditions, allergies, restrictions, emergency contacts, and provenance | Done |
 | 7 | Visits, symptoms, and first timeline | Done |
 | 8 | Medication, adherence, and reminders | Done |
@@ -63,8 +64,8 @@
 
 | Suite | Result | Where |
 |---|---|---|
-| Backend unit tests (58) and integration tests (252) | Pass | Local (temporary PostgreSQL 18). CI: see the Git note below. |
-| Frontend tests (132), lint, type check, build | Pass | Local. CI: see the Git note below. |
+| Backend unit tests (69) and integration tests (258) | Pass (2026-11-11, Phase 3a) | Local (temporary PostgreSQL 18). CI: see the Git note below. |
+| Frontend tests (137, including the Pages proxy), lint, type check, build | Pass (2026-11-11) | Local. CI: see the Git note below. |
 | Full flow from registration to linking and deleting a profile, through the Vite dev proxy against the real backend | Pass, with `curl` (Phase 8) | Local |
 | Lab trend, food log, upload, download, rejected HTML, 12 MB upload, attachment, and document deletion against the real backend | Pass, with `curl` | Local |
 | Gemini client against a local stand-in server: request shape, key header, timeouts, and error codes | Pass | Local (unit) |
@@ -72,7 +73,7 @@
 | Screenshots of every page at 320, 390, 768, and 1280 px, with no sideways scrolling and no axe WCAG 2.2 A/AA violations (`npm run screenshots`) | Pass (after D-028), including the forgot and reset password pages, a summary and Meal ideas in both modes with a stubbed AI answer and a real save to the food log, the phone menu, the invite and record edit dialogs, the lab chart's hover readout, and a page refresh that keeps the open tab, the emergency card (choose lines, save, turn on, then the public page from the link), the Manage family dialog with a family photo upload, and a profile photo shown on the profile and Home | Local, against the owner's running dev backend |
 | Docker image builds, and the auth flow through nginx | Last passed at Phase 4. Only CI can check this. | CI only |
 
-**Git note:** Phases 9 to 12 are local commits. The owner pushes; no CI run has been seen yet, and the owner is checking that Actions is enabled.
+**Git note:** The owner pushes. The CI run for commit `120d355` failed (2026-11-11). Reproduced locally: `npm run typecheck` rejected `e2e/screenshots.spec.ts`, because its local `Buffer.from` type took one argument and the new avatar line passed `'base64'`. Fixed. Lint, type check, frontend tests, the frontend build, and backend `verify` pass locally. The Docker and full-stack CI job, including the changed Dockerfile, can only be confirmed by the next CI run.
 
 ## Known issues
 
@@ -82,7 +83,10 @@
 - Home has no "doses due today" summary. It would need one request per profile, or a new backend endpoint (owner's decision).
 - An invitation can offer a dependent's profile to be linked to the invited account. The backend allows it and the old screen did the same. Owner to confirm whether only adult profiles should be offered.
 - The sidebar's profile list doesn't see changes other family members make until the page is reloaded.
-- `/auth/register` has no rate limit. Close this before going online in Phase 3 (`docs/06` section 2).
+- The hosted demo hasn't been deployed yet. R2 storage and Brevo email are tested only against local stand-in servers; the real services are checked by the smoke test in `docs/08` section 9.
+- On Render's free plan, the first request after 15 quiet minutes can take a minute or more. The app shows no "waking up" message yet.
+- Brevo replaces a Gmail sender address, so reset emails from the demo may land in spam.
+- Cloudflare Pages deploys the frontend on every push, without waiting for CI.
 - Someone who knows an email can block that account's login for 15 minutes by failing repeatedly (`docs/06` section 2).
 - Google sign-in with the owner's keys was checked on 2026-11-10 up to Google's own sign-in page, which accepted the client ID and return address. The owner hasn't yet finished a full sign-in. The owner's first try showed no button because the backend ran in a terminal opened before `setx`. The backend now logs at startup whether Google sign-in and email are on (README troubleshooting).
 - Gmail accepted the owner's app password on 2026-11-10 (checked by signing in without sending). The owner has not yet confirmed a reset email arriving in an inbox.
@@ -130,9 +134,10 @@
 6. **Password reset, Google sign-in, show-password** (D-028) are committed. **Owner:** create a Gmail app password, `setx MAIL_PASSWORD` with it, fully restart VS Code, restart the backend, and check its log says `Mail server sign-in works` (README troubleshooting).
 7. **Phase 17 (emergency card)** is done (D-029). **Owner:** restart the backend (migration V14) and try it from a profile you manage.
 8. **Phase 18 (PDF export)** is done with PDFBox (D-032), along with family management and photos (D-031). **Owner:** restart the backend (migration V15) and try them; send a password reset to confirm the email arrives.
-9. **Phase 19** (synthetic demo data, security review, presentation prep) is next. Phase 3 (deployment) still waits on hosting decisions.
+9. **Phase 3a** is done (D-033). **Owner:** commit and push, check that CI passes, then follow `docs/08` section 9 to create the accounts and deploy, and run its smoke test.
+10. **Phase 19** (synthetic demo data, security review, presentation prep) is next.
 
 Decisions the owner must make later:
 
-- **Phase 3:** hosting budget, domain, and hosting account. Close the `/auth/register` rate limit first.
+- **Later, optional:** a domain of your own (better email delivery through Brevo), or Render's paid plan (no sleeping, SMTP allowed).
 - **Before real health data:** a paid AI tier or another provider (`DECISIONS.md`, D-021).

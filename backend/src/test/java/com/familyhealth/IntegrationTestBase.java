@@ -17,7 +17,11 @@ import org.springframework.context.annotation.Import;
 		"app.oauth.google.client-id=",
 		"app.oauth.google.client-secret=",
 		"spring.mail.username=",
-		"spring.mail.password="
+		"spring.mail.password=",
+		"app.mail.brevo.api-key=",
+		// Hosting settings from the environment must not change how tests store files or accept requests.
+		"app.documents.s3.bucket=",
+		"app.proxy.secret="
 })
 // No request dumps: they would print test passwords, and hide real log output from the logging test.
 @AutoConfigureMockMvc(print = MockMvcPrint.NONE)

@@ -94,26 +94,40 @@ Compose ports are bound to `127.0.0.1` only, so nothing is exposed on the local 
 
 ## 4. Demo environment topology
 
-The frontend and API share one origin:
+Chosen in Phase 3 (`DECISIONS.md`, D-033). Every part is on a free plan. The browser sees one origin, as with nginx:
 
 ```text
 Browser
    |  HTTPS
-Reverse proxy with TLS
-   |-- /            static React build
-   |-- /api/*       Spring Boot backend
-   |-- /actuator/health
-   |
-Spring Boot backend
-   |-- PostgreSQL
-   |-- Private S3-compatible object storage
-   |-- AI provider (outbound only)
+Cloudflare Pages  (https://<project>.pages.dev)
+   |-- /                         static React build, headers from public/_headers
+   |-- /api/*                    \
+   |-- /oauth2/authorization/*    |  Pages Functions (frontend/functions, edge/proxy.ts)
+   |-- /login/oauth2/*            |  add X-Proxy-Secret and X-Client-IP
+   |-- /actuator/health          /
+   |  HTTPS
+Render web service, free plan (Docker, backend/Dockerfile)
+   |-- Neon PostgreSQL 18, free plan (direct connection, TLS)
+   |-- Cloudflare R2, private bucket (S3 API)
+   |-- Brevo email API (HTTPS, because Render's free plan blocks SMTP ports)
+   |-- Gemini API (optional)
 ```
 
-Only ports 80 and 443 are public. PostgreSQL and the backend are never publicly reachable.
+- **One origin.** The session cookie stays first-party with `SameSite=Lax`, so no CORS and no cookie changes are needed.
+- **The backend's own address is public** (`*.onrender.com`). With `PROXY_SECRET` set, it refuses every request without that header, except `/actuator/health`, which Render's probe uses and which answers only UP or DOWN.
+- **Visitor addresses.** Every request reaches the backend from Cloudflare, so the proxy sends the visitor's address (`CF-Connecting-IP`) as `X-Client-IP`, and rate limits use it. A browser can't supply either header, because the proxy replaces them.
+- **Files** go to the private R2 bucket. Render's free plan has no persistent disk.
 
-### Hosting choice (Phase 3 decision)
-The recommended starting point is one small VPS running Docker Compose, with a low-cost PostgreSQL arrangement and off-server encrypted backups. The specific host, storage provider, domain, and monthly budget are still open.
+### Free-plan limits to know
+| Service | Limit | What it means here |
+|---|---|---|
+| Render | Sleeps after 15 minutes without requests, and waking can take a minute or more. 512 MB memory, 0.1 CPU, 750 hours and 5 GB outbound bandwidth a month. | Open the app a few minutes before a demo. The Dockerfile limits the heap to fit. |
+| Neon | 100 compute hours and 1 GB storage per project a month. Compute stops 5 minutes after the last query. | The backend queries every few seconds while awake, so Neon runs whenever Render does. **Don't use an uptime pinger** to keep Render awake: at 0.25 CU that would use the month's hours in about 16 days, and Neon would then stop until the next month. |
+| Cloudflare R2 | 10 GB storage. Cloudflare may ask for a payment method before turning R2 on. | Far more than the demo needs. |
+| Cloudflare Pages | Functions: 100,000 requests a day. Static files don't count. | Enough for demos. |
+| Brevo | 300 emails a day. A Gmail sender address is replaced by one of Brevo's, so emails may land in spam. | A domain of your own, verified in Brevo, would fix delivery later. |
+
+This setup is for synthetic demo data only. Real health data needs a separate production decision.
 
 ## 5. Configuration
 
@@ -123,13 +137,19 @@ The recommended starting point is one small VPS running Docker Compose, with a l
 | `DB_URL`, `DB_USERNAME` | Database connection | No |
 | `DB_PASSWORD` | Database password | Yes |
 | `SESSION_COOKIE_SECURE` | Default `true`. Set to `false` only for local plain HTTP. Must stay `true` in demo. | No |
-| `DOCUMENT_STORAGE_DIR` | Private folder for uploaded originals, used until object storage is chosen (`DECISIONS.md`, D-020). Required. The Docker image sets it to a volume. | No |
-| `STORAGE_ENDPOINT`, `STORAGE_BUCKET` | Object storage, once hosting is chosen in Phase 3 | No |
-| `STORAGE_ACCESS_KEY`, `STORAGE_SECRET_KEY` | Object storage, once hosting is chosen in Phase 3 | Yes |
+| `DOCUMENT_STORAGE_DIR` | Private folder for uploaded originals and photos (`DECISIONS.md`, D-020). Required unless `STORAGE_BUCKET` is set. The Docker image sets it to a volume. | No |
+| `STORAGE_BUCKET` | When set, files go to this private S3-compatible bucket (Cloudflare R2 in the demo, D-033) instead of the folder | No |
+| `STORAGE_ENDPOINT` | The S3 address, for R2 `https://<account-id>.r2.cloudflarestorage.com`. Required with a bucket. | No |
+| `STORAGE_REGION` | Default `auto`, which R2 expects | No |
+| `STORAGE_ACCESS_KEY`, `STORAGE_SECRET_KEY` | An R2 API token limited to this bucket, with object read and write. Required with a bucket. | Yes |
+| `PROXY_SECRET` | Hosted demo only (D-033). The backend refuses requests without this value in `X-Proxy-Secret`, except the health check, and takes the visitor's address from `X-Client-IP`. At least 32 characters (`openssl rand -hex 32`). The same value goes in Cloudflare Pages. Leave it empty everywhere else. | Yes |
+| `BREVO_API_KEY` | When set, email goes through Brevo's HTTPS API instead of SMTP (D-033). `MAIL_FROM` must then be a sender address verified in Brevo. | Yes |
+| `PORT` | Render only: the port it sends traffic to, `8080` | No |
+| `JAVA_TOOL_OPTIONS` | Set in the Docker image to fit 512 MB (`-XX:MaxRAMPercentage=70 -XX:+UseSerialGC -Xss512k`). A host can override it. | No |
 | `APP_PUBLIC_URL` | The address people open, such as `https://app.example.com`. Reset links and the Google return address are built from it. Default `http://localhost:5173`. | No |
 | `MAIL_USERNAME` | Gmail address that sends reset emails. Without it, no email is sent (the `dev` profile writes the message to the log instead). | No |
 | `MAIL_PASSWORD` | A Gmail **app password** for that address (not the normal password) | Yes |
-| `MAIL_FROM` | Sender shown on emails, default `MAIL_USERNAME` | No |
+| `MAIL_FROM` | Sender shown on emails, default `MAIL_USERNAME`. With Brevo, the sender verified there. | No |
 | `MAIL_HOST`, `MAIL_PORT` | Default `smtp.gmail.com` and `587` | No |
 | `GOOGLE_CLIENT_ID` | Google OAuth client ID. Google sign-in is on only when this and the secret are set. | No |
 | `GOOGLE_CLIENT_SECRET` | Google OAuth client secret | Yes |
@@ -140,13 +160,15 @@ The recommended starting point is one small VPS running Docker Compose, with a l
 | `AI_PROVIDER_API_KEY` | AI provider (Phase 12) | Yes |
 | `AI_DAILY_BUDGET_LIMIT` | Usage limit (Phase 12) | No |
 
-`.env.example` lists names only. Real values go in `.env` locally, GitHub Actions secrets in CI, and server environment variables for the demo environment. No secret variable may have a `VITE_` prefix, because those values are built into frontend code.
+`.env.example` lists names only. Real values go in `.env` locally, GitHub Actions secrets in CI, and the Render and Cloudflare dashboards for the demo environment. No secret variable may have a `VITE_` prefix, because those values are built into frontend code.
+
+Cloudflare Pages has its own variables: `BACKEND_URL` (the Render address, such as `https://family-health-backend.onrender.com`), `PROXY_SECRET` (encrypted, the same value as the backend's), and `NODE_VERSION` (`22.14.0`, for the build).
 
 ## 6. CI/CD
 
 1. **Pull request or push:** build and test (`07-testing-strategy.md` section 6). Runs from Phase 1.
-2. **Merge to `main`:** build and publish images (Phase 3).
-3. **Deploy to demo:** pull images, then restart with health checks (Phase 3).
+2. **Backend deploy:** Render builds `backend/Dockerfile` from `main` after the GitHub checks pass (`render.yaml`, `autoDeployTrigger: checksPass`), and switches over once `/actuator/health` answers.
+3. **Frontend deploy:** Cloudflare Pages builds `frontend` on every push to `main`. It can't wait for CI, so a broken frontend could go out before CI reports. Check the Actions result after each push.
 
 ## 7. Database migrations and backups
 
@@ -161,7 +183,53 @@ The recommended starting point is one small VPS running Docker Compose, with a l
 - **Before each presentation:** reset demo data, check the health endpoint, test login and one AI call, and confirm the demo banner is visible.
 - **If AI is unavailable during a demo:** manual workflows still work, and pre-reviewed synthetic results can demonstrate the review screens.
 
-## 9. Open for Phase 3
+## 9. Setting up the hosted demo (Phase 3b)
 
-- **Q1.** What monthly hosting and AI budget can the demo environment have?
-- **Q2.** Do you already have a domain, and is there a date the demo needs to be online by?
+Done once, by the owner, in each service's dashboard. Push the Phase 3 code to GitHub first. Never put a secret in a file in the repository.
+
+### Step 1: Neon database
+1. Create a Neon account and a project: PostgreSQL **18**, region **AWS Asia Pacific (Singapore)**.
+2. On the project dashboard, open **Connect**, turn **connection pooling off**, and copy the connection string. The app keeps its own pool, and Flyway needs a direct connection.
+3. Turn `postgresql://USER:PASSWORD@HOST/DBNAME?sslmode=require...` into three values:
+   - `DB_URL` = `jdbc:postgresql://HOST/DBNAME?sslmode=require&channelBinding=require`
+   - `DB_USERNAME` = `USER`
+   - `DB_PASSWORD` = `PASSWORD`
+
+### Step 2: Cloudflare R2 bucket
+1. In the Cloudflare dashboard, open **R2 Object Storage**. Add a payment method if Cloudflare asks. The free 10 GB isn't charged.
+2. **Create bucket**: name `family-health-demo`, location hint **Asia-Pacific**. Leave public access **off**.
+3. **Manage API tokens**, then **Create API token**: permission **Object Read & Write**, for **this bucket only**.
+4. Copy the **Access Key ID** (`STORAGE_ACCESS_KEY`), the **Secret Access Key** (`STORAGE_SECRET_KEY`, shown only once), and the **S3 endpoint** without the bucket name (`STORAGE_ENDPOINT`, `https://<account-id>.r2.cloudflarestorage.com`). `STORAGE_BUCKET` is `family-health-demo`.
+
+### Step 3: Brevo email
+1. Create a free Brevo account.
+2. Under **Senders, Domains & Dedicated IPs**, open **Senders**, add your email address, and confirm the email Brevo sends. That address is `MAIL_FROM`.
+3. Under **SMTP & API**, open **API Keys** and generate a key (`BREVO_API_KEY`).
+
+### Step 4: the proxy secret
+In Git Bash, run `openssl rand -hex 32`. The 64-character result is `PROXY_SECRET`, used in Steps 5 and 6.
+
+### Step 5: Render backend
+1. Create a Render account and connect GitHub, with access to this repository only.
+2. **New**, then **Blueprint**, then choose this repository. Render reads `render.yaml`.
+3. Fill in the values it asks for. For `APP_PUBLIC_URL`, use `https://<project>.pages.dev`, with the Pages project name you'll pick in Step 6. Leave `GOOGLE_*` and `GEMINI_API_KEY` empty if those features aren't wanted. Gemini's free tier is for synthetic data only (D-021).
+4. Apply, and wait for the first deploy. The log should say `Requests must come through the proxy`, `Object storage bucket is reachable`, and `Brevo API key works`.
+5. Note the service address, such as `https://family-health-backend.onrender.com`.
+
+### Step 6: Cloudflare Pages frontend
+1. **Workers & Pages**, then **Create**, then **Pages**, then **Connect to Git**, and choose this repository.
+2. Project name: the one used in `APP_PUBLIC_URL`. Production branch `main`. Framework preset **None**. Build command `npm run build`. Build output directory `dist`. Root directory `frontend`.
+3. Environment variables: `NODE_VERSION` = `22.14.0`, `BACKEND_URL` = the Render address from Step 5, and `PROXY_SECRET` (choose **Encrypt**).
+4. Save and deploy. If the project name ended up different, update `APP_PUBLIC_URL` in Render.
+
+### Step 7: Google sign-in (optional)
+In Google Cloud Console, open the OAuth client and add the authorized redirect URI `https://<project>.pages.dev/login/oauth2/code/google`. Then set `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in Render.
+
+### Step 8: smoke test
+With synthetic data only:
+1. Open `https://<project>.pages.dev`. The first load after a pause can take a minute or more while Render wakes.
+2. Register, sign out, and sign in again.
+3. Create a profile, upload a document, open it, and delete it. Add a profile photo.
+4. Use **Forgot password**, and check the inbox and the spam folder.
+5. Turn on an emergency card and open its link in a private window.
+6. Open `https://<render-service>.onrender.com/api/v1/auth/csrf` directly. It must answer **403** with `PROXY_REQUIRED`.

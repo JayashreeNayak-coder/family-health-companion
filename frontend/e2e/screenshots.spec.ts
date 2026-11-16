@@ -8,7 +8,7 @@ import { expect, test, type APIRequestContext, type Page } from '@playwright/tes
  */
 
 // Node's Buffer, reached without adding @types/node for this one use.
-const NodeBuffer = (globalThis as unknown as { Buffer: { from(text: string): Uint8Array } }).Buffer
+const NodeBuffer = (globalThis as unknown as { Buffer: { from(text: string, encoding?: 'base64'): Uint8Array } }).Buffer
 
 /** A tiny synthetic avatar (96 px PNG), for the photo uploads. */
 const AVATAR = NodeBuffer.from('iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAIAAABt+uBvAAABL0lEQVR42u3asXHDMBBE0a3EJTp2OS7HRbgEBU6UqwOZMwSOOPDN/ApeBtzm9/GnNwUBIECAAAECBAiQAAECBAgQIECABAgQIECAAB3q+fP9vpsC/euyiFS66FxllC40VzGlnU6xUTrqVBqlqU6ZEaAFgCbp1BiltU6BESBAKwMV6Mw2AgQIECBAgAABAgQIkLcYIED3A/Kj6E8akLuYy6rbvHXHXdYd9kEWZjaKAtQH6OPr80i3AzrosoJUutBcxZReNPVMaapTZpS+OjVGaa1TYJTuOrONsoHOVKPsoTPPKNvoTDLKTjozjLKZznAjQIVAi+iMNQJUBbSUzkCj7KozyggQoMuBltUZYgRoMtDiOueNAAG6EKiFzkkjQIAALQrUSOeMESBAgAABWhjoBeIOy2mm5fDwAAAAAElFTkSuQmCC', 'base64')

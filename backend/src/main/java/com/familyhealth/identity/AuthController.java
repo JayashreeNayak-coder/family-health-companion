@@ -34,13 +34,16 @@ class AuthController {
 
 	private final PasswordResetService passwordReset;
 
+	private final RegistrationRateLimiter registrationLimiter;
+
 	private final boolean googleEnabled;
 
 	AuthController(AuthService authService, LoginSession loginSession, PasswordResetService passwordReset,
-			ObjectProvider<ClientRegistrationRepository> googleRegistrations) {
+			RegistrationRateLimiter registrationLimiter, ObjectProvider<ClientRegistrationRepository> googleRegistrations) {
 		this.authService = authService;
 		this.loginSession = loginSession;
 		this.passwordReset = passwordReset;
+		this.registrationLimiter = registrationLimiter;
 		this.googleEnabled = googleRegistrations.getIfAvailable() != null;
 		// Says at startup why the Google button is or isn't shown. No key values are logged.
 		LoggerFactory.getLogger(AuthController.class)
@@ -68,8 +71,9 @@ class AuthController {
 
 	@PostMapping("/register")
 	@ResponseStatus(HttpStatus.CREATED)
-	AccountResponse register(@Valid @RequestBody RegisterRequest request) {
-		return authService.register(request);
+	AccountResponse register(@Valid @RequestBody RegisterRequest body, HttpServletRequest request) {
+		registrationLimiter.acquire(request.getRemoteAddr());
+		return authService.register(body);
 	}
 
 	@PostMapping("/login")

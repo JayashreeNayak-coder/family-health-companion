@@ -1,0 +1,56 @@
+# Render Blueprint for the backend of the hosted demo (DECISIONS.md, D-033; docs/08-deployment-guide.md section 4).
+# The frontend is on Cloudflare Pages, the database on Neon, and files in Cloudflare R2.
+# Values marked "sync: false" are secrets or account-specific. Render asks for them when the Blueprint is created.
+services:
+  - type: web
+    name: family-health-backend
+    runtime: docker
+    plan: free
+    # Same region as the Neon database (AWS ap-southeast-1, Singapore).
+    region: singapore
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /actuator/health
+    # Deploy only after the GitHub Actions checks pass on main.
+    autoDeployTrigger: checksPass
+    buildFilter:
+      paths:
+        - backend/**
+    envVars:
+      # The port the Dockerfile's application listens on.
+      - key: PORT
+        value: "8080"
+      # Neon's direct (not pooled) connection, as JDBC: jdbc:postgresql://<host>/<db>?sslmode=require
+      - key: DB_URL
+        sync: false
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      # https://<project>.pages.dev, without a trailing slash.
+      - key: APP_PUBLIC_URL
+        sync: false
+      # The same value as PROXY_SECRET in Cloudflare Pages, at least 32 characters.
+      - key: PROXY_SECRET
+        sync: false
+      # Cloudflare R2: https://<account-id>.r2.cloudflarestorage.com
+      - key: STORAGE_ENDPOINT
+        sync: false
+      - key: STORAGE_BUCKET
+        sync: false
+      - key: STORAGE_ACCESS_KEY
+        sync: false
+      - key: STORAGE_SECRET_KEY
+        sync: false
+      # Brevo: the API key, and the sender address verified in Brevo.
+      - key: BREVO_API_KEY
+        sync: false
+      - key: MAIL_FROM
+        sync: false
+      # Optional. Without these, Google sign-in and AI features are off and everything else works.
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
